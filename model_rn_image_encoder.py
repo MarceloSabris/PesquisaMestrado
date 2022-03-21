@@ -16,6 +16,8 @@ import numpy as np
 from vqa_util import question2str, answer2str
 
 
+
+
 class Model(object):
 
     def __init__(self, config,
@@ -31,7 +33,7 @@ class Model(object):
         self.q_dim = self.config.data_info[3]
         self.a_dim = self.config.data_info[4]
         self.conv_info = self.config.conv_info
-
+             
         # create placeholders for the input
         self.img = tf.compat.v1.placeholder(
             name='img', dtype=tf.float32,
@@ -43,6 +45,11 @@ class Model(object):
         self.a =  tf.compat.v1.placeholder(
             name='a', dtype=tf.float32, shape=[self.batch_size, self.a_dim],
         )
+        self.imgDecod = tf.compat.v1.placeholder(
+            name='imgDecod', dtype=tf.float32,
+            shape=[self.batch_size,4, 4, 4]
+        )
+        
 
         self.is_training =  tf.compat.v1.placeholder_with_default(bool(is_train), [], name='is_training')
 
@@ -53,6 +60,8 @@ class Model(object):
             self.img: batch_chunk['img'],  # [B, h, w, c]
             self.q: batch_chunk['q'],  # [B, n]
             self.a: batch_chunk['a'],  # [B, m]
+            self.imgDecod : batch_chunk['imgDecod']
+            
         }
         if is_training is not None:
             fd[self.is_training] = is_training
@@ -90,22 +99,9 @@ class Model(object):
                 g_4 = fc(g_3, 256, name='g_4')
                 return g_4
 
-        def conv2dWheights (model,filter,strides1, position,name1,other  ):
-            values = model.layers[position].get_weights()
-            weights = tf.keras.initializers.constant(values[0])
-            bias =  tf.keras.initializers.constant(values[1])
-            encoded = tf.keras.layers.Conv2D(filter, kernel_size=3, strides= strides1, padding='same',  kernel_initializer = weights,bias_initializer=bias,name=name1)(other)
-            return encoded
-
-        def conv2dTransposeWheights (model,filter,strides1, position,name1,other  ):
-            values = model.layers[position].get_weights()
-            weights = tf.keras.initializers.constant(values[0])
-            bias =  tf.keras.initializers.constant(values[1])
-            encoded = tf.keras.layers.Conv2DTranspose(filter, kernel_size=3, strides= strides1, padding='same',  kernel_initializer = weights,bias_initializer=bias,name=name1)(other)
-            return encoded
-
+       
    
-        def BatchNormalization (model,position,name1,other  ):
+        def BatchNormalization (model,position,name1,other  ): 
             values = model.layers[position].get_weights()
             beta = tf.keras.initializers.constant(model.layers[position].beta)
             gamma =  tf.keras.initializers.constant(model.layers[position].gamma)
@@ -119,45 +115,18 @@ class Model(object):
         optimizer = tf.keras.optimizers.Adam(lr = 0.017)
 
         # Classifier: takes images as input and outputs class label [B, m]
-        def CONV(img, q, scope='CONV'):
-               
-                model = tf.keras.models.load_model("C:\Source\Relation-Network-Tensorflow\decoder\model8", compile=False) 
-                
-                model.summary()
-                model.load_weights("C:\Source\Relation-Network-Tensorflow\decoder\weights8")
-                
-                with  tf.compat.v1.variable_scope(scope) as scope:
-                    log.warn(scope.name)
-               
-                encoded =  conv2dWheights(model,43,1,1,'conv_1' ,img)  
-                encoded = BatchNormalization(model,2,'batchnorm_1',encoded)
-                encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_1')(encoded)
-
-
-                encoded =  conv2dWheights(model,15,4,4,'conv_2' ,img)  
-                encoded = tf.keras.layers.BatchNormalization(name='batchnorm_2')(encoded)
-                encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_2')(encoded)
-                
-                encoded =  conv2dWheights(model,8,4,7,'conv_3' ,img)  
-                encoded = tf.keras.layers.BatchNormalization(name='batchnorm_3')(encoded)
-                encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_3')(encoded)
-                
-                encoded =  conv2dWheights(model,4,2,10,'conv_4' ,img)  
-                encoded = tf.keras.layers.BatchNormalization(name='batchnorm_4')(encoded)
-                encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_4')(encoded)
-
-
-
+        def CONV(img, q,encodedImg, scope='CONV'): 
+            with  tf.compat.v1.variable_scope(scope) as scope:
                 # eq.1 in the paper
                 # g_theta = (o_i, o_j, q)
                 # conv_4 [B, d, d, k]
-                d = encoded.get_shape().as_list()[1]
+                d = encodedImg.get_shape().as_list()[1]
                 all_g = []
                 for i in range(d*d):
-                    o_i = conv_4[:, int(i / d), int(i % d), :]
+                    o_i = encodedImg[:, int(i / d), int(i % d), :]
                     o_i = concat_coor(o_i, i, d)
                     for j in range(d*d):
-                        o_j = conv_4[:, int(j / d), int(j % d), :]
+                        o_j = encodedImg[:, int(j / d), int(j % d), :]
                         o_j = concat_coor(o_j, j, d)
                         if i == 0 and j == 0:
                             g_i_j = g_theta(o_i, o_j, q, reuse=False)
@@ -214,12 +183,12 @@ class Model(object):
                 fc_3 = fc(fc_2, n, activation_fn=None, name='fc_3')
                 return fc_3
 
-        g = CONV(self.img, self.q, scope='CONV')
+        g = CONV(self.img, self.q, self.imgDecod,scope='CONV')
         logits = f_phi(g, scope='f_phi')
         self.all_preds = tf.nn.softmax(logits)
         self.loss, self.accuracy = build_loss(logits, self.a)
 
-        # Add summaries
+        # Add summaries'
         def draw_iqa(img, q, target_a, pred_a):
             fig, ax = tfplot.subplots(figsize=(6, 6))
             ax.imshow(img)

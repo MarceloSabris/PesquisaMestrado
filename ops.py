@@ -28,6 +28,13 @@ def conv2d(input, output_shape, is_train, activation_fn=tf.nn.relu,
     with  tf.compat.v1.variable_scope(name):
         w = tf.compat.v1.get_variable('w', [k_h, k_w, input.get_shape()[-1], output_shape],
                             initializer=tf.compat.v1.truncated_normal_initializer(stddev=stddev))
+        print('sssssssssssssss')
+        print ('filters' ) 
+        print( w)
+        print ('strides' ) 
+        test = [1, s_h, s_w, 1]
+        print( test)
+              
         conv = tf.nn.conv2d(input, w, strides=[1, s_h, s_w, 1], padding='SAME')
         biases = tf.compat.v1.get_variable('biases', [output_shape],
                                  initializer=tf.constant_initializer(0.0))

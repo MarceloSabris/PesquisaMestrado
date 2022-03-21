@@ -36,7 +36,8 @@ def create_input_ops(dataset,
     Return a batched tensor for the inputs from the dataset.
     '''
     input_ops = {}
-    imgs = []
+    imgs = [] 
+
     if data_id is None:
         data_id = dataset.ids
         log.info("input_ops [%s]: Using %d IDs from dataset", scope, len(data_id))
@@ -50,20 +51,18 @@ def create_input_ops(dataset,
            tf.convert_to_tensor(data_id), capacity=128
         ).dequeue(name='input_ids_dequeue')
 
-        img, q, a = dataset.get_data(data_id[0])
-
+        img, q, a,imgDecod = dataset.get_data(data_id[0])
+        #for id in data_id:
+          #   imgs.append(load_fn(id)[1])
+        #imgs = np.array(imgs)
         def load_fn(id):
             # image [n, n], q: [m], a: [l]
-            img, q, a = dataset.get_data(id)
-            return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32))
-    
-        for id in data_id:
-           imgs.append(load_fn(id)[1])
+            img, q, a, imgDecod  = dataset.get_data(id)
+            return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32),imgDecod.astype(np.float32))
 
-        imgs = np.array(imgs)
-        input_ops['id'], input_ops['img'], input_ops['q'], input_ops['a'] = tf.py_function(
+        input_ops['id'], input_ops['img'], input_ops['q'], input_ops['a'],input_ops['imgDecod'] = tf.compat.v1.py_func(
             load_fn, inp=[input_ops['id']],
-            Tout=[tf.string, tf.float32, tf.float32, tf.float32],
+            Tout=[tf.string, tf.float32, tf.float32, tf.float32, tf.float32],
             name='func'
         )
 
@@ -71,6 +70,8 @@ def create_input_ops(dataset,
         input_ops['img'].set_shape(list(img.shape))
         input_ops['q'].set_shape(list(q.shape))
         input_ops['a'].set_shape(list(a.shape))
+        input_ops['imgDecod'].set_shape(list(imgDecod.shape))
+        
 
     # batchify
     capacity = 2 * batch_size * num_threads
@@ -93,4 +94,4 @@ def create_input_ops(dataset,
             capacity=capacity,
         )
 
-    return input_ops, batch_ops , imgs
+    return input_ops, batch_ops,imgs

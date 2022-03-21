@@ -46,6 +46,7 @@ class Trainer(object):
         # --- input ops ---
         self.batch_size = config.batch_size
 
+
         _, self.batch_train,imgs = create_input_ops(dataset, self.batch_size,
                                                is_training=True)
         _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,
@@ -82,7 +83,7 @@ class Trainer(object):
         )
        
         self.summary_op = tf.compat.v1.summary.merge_all()
-        import tfplot
+        #import tfplot
         self.plot_summary_op =  tf.compat.v1.summary.merge_all()
       
         self.saver = tf.compat.v1.train.Saver(max_to_keep=1000)

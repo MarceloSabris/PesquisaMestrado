@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import glob
 import os
 import time
-import cv2
+
 import numpy as np
 
 from input_ops import create_input_ops 
@@ -33,7 +33,7 @@ test_imgs = []
 
 def load_fn(id,dataset):
   # image [n, n], q: [m], a: [l]
-  img, q, a = dataset.get_data(id)
+  img, q, a,d = dataset.get_data(id)
   return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32))
 
 
@@ -64,11 +64,16 @@ x_train = np.reshape(x_train, (len(x_train), 128, 128, 3))
 #x_test = x_test[0]
 
 
-inputs = tf.keras.Input(shape=(128, 128, 3), name='input_layer')
+
+
+#inputs = tf.keras.Input(shape=(128, 128, 3), name='input_layer')
 # Conv Block 1 -> BatchNorm->leaky Relu
-encoded = tf.keras.layers.Conv2D(43, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
-encoded = tf.keras.layers.BatchNormalization(name='batchnorm_1')(encoded)
-encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_1')(encoded)
+#encoded = tf.keras.layers.Conv2D(30, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
+#encoded = tf.keras.layers.BatchNormalization(name='batchnorm_1')(encoded)
+#encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_1')(encoded)
+
+#tf.nn.relu  X tf.keras.layers.LeakyReLU
+
 # Conv Block 2 -> BatchNorm->leaky Relu
 encoded = tf.keras.layers.Conv2D(15, kernel_size=3, strides= 4, padding='same', name='conv_2')(encoded)
 encoded = tf.keras.layers.BatchNormalization(name='batchnorm_2')(encoded)
@@ -84,7 +89,7 @@ encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_4a')(encoded)
 
 #Decoder
 # DeConv Block 1-> BatchNorm->leaky Relu
-decoded = tf.keras.layers.Conv2DTranspose(43, kernel_size=3, strides= 1, padding='same',name='conv_transpose_1')(encoded)
+decoded = tf.keras.layers.Conv2DTranspose(30, kernel_size=3, strides= 1, padding='same',name='conv_transpose_1')(encoded)
 decoded = tf.keras.layers.BatchNormalization(name='batchnorm_4')(decoded)
 decoded = tf.keras.layers.LeakyReLU(name='leaky_relu_4')(decoded)
 # DeConv Block 2-> BatchNorm->leaky Relu
@@ -113,7 +118,7 @@ autoencoder = tf.keras.Model(inputs, outputs)
 optimizer = tf.keras.optimizers.Adam(lr = 0.017)
 autoencoder.compile(optimizer=optimizer, loss=SSIMLoss)
 autoencoder.summary()
-autoencoder.load_weights("C:\Source\Relation-Network-Tensorflow\decoder\weights8")
+autoencoder.load_weights("C:\source\PesquisaMestrado\decoder1\weights4")
 
 history=autoencoder.fit(x_train, x_train,
                 epochs=20,
@@ -129,8 +134,8 @@ history=autoencoder.fit(x_train, x_train,
 #plt.ylim([0.5, 1])
 #plt.legend(loc='lower right')
 #plt.savefig("C:\Source\Relation-Network-Tensorflow\decoder\Treino3.png")
-tf.keras.models.save_model (autoencoder,"C:\Source\Relation-Network-Tensorflow\decoder\model9")
-autoencoder.save_weights("C:\Source\Relation-Network-Tensorflow\decoder\weights9")
+tf.keras.models.save_model (autoencoder,"C:\source\PesquisaMestrado\decoder1\model3")
+autoencoder.save_weights("C:\source\PesquisaMestrado\decoder1\weights4")
 #weitghts = encoded.get_weights()
 
 
@@ -153,4 +158,4 @@ for i in range(1, n + 1):
     ax.get_xaxis().set_visible(False)
     ax.get_yaxis().set_visible(False)
 
-plt.savefig("C:\Source\Relation-Network-Tensorflow\decoder\Treino12.png")
+plt.savefig("C:\source\PesquisaMestrado\decoder1\Treino13.png")

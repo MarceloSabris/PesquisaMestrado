@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import glob
 import os
 import time
-import cv2
+
 import numpy as np
 
 from input_ops import create_input_ops 
@@ -66,7 +66,7 @@ x_train = np.reshape(x_train, (len(x_train), 128, 128, 3))
 
 inputs = tf.keras.Input(shape=(128, 128, 3), name='input_layer')
 # Conv Block 1 -> BatchNorm->leaky Relu
-encoded = tf.keras.layers.Conv2D(32, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
+encoded = tf.keras.layers.Conv2D(43, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
 encoded = tf.keras.layers.BatchNormalization(name='batchnorm_1')(encoded)
 encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_1')(encoded)
 # Conv Block 2 -> BatchNorm->leaky Relu

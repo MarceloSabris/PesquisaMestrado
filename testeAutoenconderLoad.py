@@ -299,8 +299,8 @@ optimizer = tf.keras.optimizers.Adam(lr = 0.0005)
 autoencoder2.compile(optimizer=optimizer, loss=SSIMLoss)
 autoencoder2.summary()
 
+inputs = tf.keras.Input(shape=(128,128,3) , name='input_layer')
     
-
 
 
 

@@ -36,7 +36,7 @@ class Trainer(object):
             hyper_parameter_str,
             time.strftime("%Y%m%d-%H%M%S")
         )
-        tf.compat.v1.enable_eager_execution()
+        #tf.compat.v1.enable_eager_execution()
         if not os.path.exists(self.train_dir):
             os.makedirs(self.train_dir)
         log.infov("Train Dir: %s", self.train_dir)

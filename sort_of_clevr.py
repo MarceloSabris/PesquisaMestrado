@@ -35,10 +35,14 @@ class Dataset(object):
 
     def get_data(self, id):
         # preprocessing and data augmentation
-        img = self.data[id]['image'].value/255.
-        q = self.data[id]['question'].value.astype(np.float32)
-        a = self.data[id]['answer'].value.astype(np.float32)
-        return img, q, a
+        img = self.data[id]['image'][()]/255.
+        q = self.data[id]['question'][()].astype(np.float32)
+        a = self.data[id]['answer'][()].astype(np.float32)
+        try: 
+           imgDecod = self.data[id]['encoded'][()].astype(np.float32)   
+        except: 
+           imgDecod = []
+        return img, q, a, imgDecod
 
     @property
     def ids(self):

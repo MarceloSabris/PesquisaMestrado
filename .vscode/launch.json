@@ -8,10 +8,11 @@
         {
             "name": "Python: Arquivo Atual",
             "type": "python",
+          
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal", 
-            "args": ["--dataset_path", "Sort-of-CLEVR_default","--model","rn","--batch_size","60"]           
+            "console": "integratedTerminal",
+          "args": [ "--dataset_path", "Sort-of-CLEVR_default", "--model", "rn", "--batch_size", "60","--checkpoint" , "C:\\teste\\model-22000" ]           
         }
     ]
 }
