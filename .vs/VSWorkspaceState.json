@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\decoder1\\model3"
   ],
-  "SelectedNode": "\\trainerDescode.py",
+  "SelectedNode": "\\decoder1",
   "PreviewInSolutionExplorer": false
 }

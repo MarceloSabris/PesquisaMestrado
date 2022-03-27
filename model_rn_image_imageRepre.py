@@ -45,13 +45,19 @@ class Model(object):
         self.a =  tf.compat.v1.placeholder(
             name='a', dtype=tf.float32, shape=[self.batch_size, self.a_dim],
         )
-        
         self.imgDecod = tf.compat.v1.placeholder(
             name='imgDecod', dtype=tf.float32,
-            shape=[self.batch_size,4, 1]
-            
+            shape=[self.batch_size,4, 4, 4]
         )
-        
+        self.codImag = tf.compat.v1.placeholder(
+            name='codImag', dtype=tf.float32,
+            shape=[self.batch_size,4, 4, 4]
+        )
+        self.codImagOri = tf.compat.v1.placeholder(
+            name='codImagOri', dtype=tf.float32,
+            shape=[self.batch_size,4,4,2]
+        )
+
 
         self.is_training =  tf.compat.v1.placeholder_with_default(bool(is_train), [], name='is_training')
 
@@ -62,7 +68,10 @@ class Model(object):
             self.img: batch_chunk['img'],  # [B, h, w, c]
             self.q: batch_chunk['q'],  # [B, n]
             self.a: batch_chunk['a'],  # [B, m]
-            self.imgDecod : batch_chunk['imgDecod']
+            self.imgDecod : batch_chunk['imgDecod'],
+            self.codImag :  batch_chunk['codImag'] ,
+            self.codImagOri :  batch_chunk['codImagOri'] 
+            
             
         }
         if is_training is not None:
@@ -117,18 +126,18 @@ class Model(object):
         optimizer = tf.keras.optimizers.Adam(lr = 0.017)
 
         # Classifier: takes images as input and outputs class label [B, m]
-        def CONV(img, q,encodedImg, scope='CONV'): 
+        def CONV(img, q,repImg, scope='CONV'): 
             with  tf.compat.v1.variable_scope(scope) as scope:
                 # eq.1 in the paper
                 # g_theta = (o_i, o_j, q)
                 # conv_4 [B, d, d, k]
-                d = encodedImg.get_shape().as_list()[1]
+                d = repImg.get_shape().as_list()[1]
                 all_g = []
                 for i in range(d*d):
-                    o_i = encodedImg[:, int(i / d), int(i % d), :]
+                    o_i = repImg[:, int(i / d), int(i % d), :]
                     o_i = concat_coor(o_i, i, d)
                     for j in range(d*d):
-                        o_j = encodedImg[:, int(j / d), int(j % d), :]
+                        o_j = repImg[:, int(j / d), int(j % d), :]
                         o_j = concat_coor(o_j, j, d)
                         if i == 0 and j == 0:
                             g_i_j = g_theta(o_i, o_j, q, reuse=False)
@@ -185,7 +194,7 @@ class Model(object):
                 fc_3 = fc(fc_2, n, activation_fn=None, name='fc_3')
                 return fc_3
 
-        g = CONV(self.img, self.q, self.imgDecod,scope='CONV')
+        g = CONV(self.img, self.q, self.codImagOri,scope='CONV')
         logits = f_phi(g, scope='f_phi')
         self.all_preds = tf.nn.softmax(logits)
         self.loss, self.accuracy = build_loss(logits, self.a)

@@ -42,7 +42,18 @@ class Dataset(object):
            imgDecod = self.data[id]['encoded'][()].astype(np.float32)   
         except: 
            imgDecod = []
-        return img, q, a, imgDecod
+        try: 
+           codImag = self.data[id]['codImag'][()].astype(np.float32)   
+        except: 
+           codImag = []
+        try:                           
+           codImagOri = self.data[id]['codImagOrig'][()].astype(np.float32)   
+        except: 
+           codImagOri = []
+
+           
+           
+        return img, q, a, imgDecod , codImag,codImagOri
 
     @property
     def ids(self):

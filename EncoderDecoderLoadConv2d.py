@@ -109,7 +109,7 @@ def loadDataBase() :
   parser.add_argument('--model', type=str, default='rn', choices=['rn', 'baseline'])
   parser.add_argument('--prefix', type=str, default='default')
   parser.add_argument('--checkpoint', type=str, default=None)
-  parser.add_argument('--dataset_path', type=str, default='Sort-of-CLEVR_default')
+  parser.add_argument('--dataset_path', type=str, default='Sort-of-CLEVR_teste_decode-image')
   parser.add_argument('--learning_rate', type=float, default=2.5e-4)
   parser.add_argument('--lr_weight_decay', action='store_true', default=False)
   config = parser.parse_args()
@@ -127,7 +127,7 @@ def loadDataBase() :
 
   def load_fn(id,dataset):
     # image [n, n], q: [m], a: [l]
-    img, q, a = dataset.get_data(id)
+    img, q, a,imgDec,Reshap,Shape = dataset.get_data(id)
     return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32))
 
 
@@ -149,7 +149,7 @@ def loadDataBase() :
   return x_test,x_train
 
 def printResultTest(decoded_imgs,x_test ):
-  n = 10
+  n = 5
   plt.figure(figsize=(20, 4))
   for i in range(1, n + 1):
       # Display original
@@ -174,7 +174,7 @@ inputs = tf.keras.Input(shape=(128, 128, 3), name='input_layer')
 autoencoded = Model(inputs,encoded(inputs))
 autoencoded.compile(loss=SSIMLoss, optimizer='adam', metrics=SSIMLoss)
 autoencoded.summary()
-loadWeights(autoencoded,"C:\Source\PesquisaMestrado\decoder\model8","C:\Source\PesquisaMestrado\decoder\weights8" )
+loadWeights(autoencoded,"C:\Source\PesquisaMestrado\decoder\model3","C:\Source\PesquisaMestrado\decoder\weights3" )
 
 x_test,train_imgs = loadDataBase() 
 
@@ -184,7 +184,7 @@ imputDecoder = tf.keras.Input(shape=(4, 4, 4), name='input_layer_dec')
 autodecoder = Model(imputDecoder,decoded(imputDecoder))
 autodecoder.compile(loss=SSIMLoss, optimizer='adam', metrics=SSIMLoss)
 autodecoder.summary()
-loadWeights(autodecoder,"C:\Source\PesquisaMestrado\decoder\model8","C:\Source\PesquisaMestrado\decoder\weights8" )
+loadWeights(autodecoder,"C:\Source\PesquisaMestrado\decoder1\model3","C:\Source\PesquisaMestrado\decoder1\weights4" )
 
 
 

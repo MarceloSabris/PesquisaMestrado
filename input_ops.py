@@ -51,18 +51,18 @@ def create_input_ops(dataset,
            tf.convert_to_tensor(data_id), capacity=128
         ).dequeue(name='input_ids_dequeue')
 
-        img, q, a,imgDecod = dataset.get_data(data_id[0])
+        img, q, a,imgDecod,codImag,codImagOri = dataset.get_data(data_id[0])
         #for id in data_id:
           #   imgs.append(load_fn(id)[1])
         #imgs = np.array(imgs)
         def load_fn(id):
             # image [n, n], q: [m], a: [l]
-            img, q, a, imgDecod  = dataset.get_data(id)
-            return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32),imgDecod.astype(np.float32))
+            img, q, a, imgDecod , codImag,codImagOri  = dataset.get_data(id)
+            return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32),imgDecod.astype(np.float32),   codImag.astype(np.float32)  ,codImagOri.astype(np.float32))
 
-        input_ops['id'], input_ops['img'], input_ops['q'], input_ops['a'],input_ops['imgDecod'] = tf.compat.v1.py_func(
+        input_ops['id'], input_ops['img'], input_ops['q'], input_ops['a'],input_ops['imgDecod'],input_ops['codImag'],input_ops['codImagOri']   = tf.compat.v1.py_func(
             load_fn, inp=[input_ops['id']],
-            Tout=[tf.string, tf.float32, tf.float32, tf.float32, tf.float32],
+            Tout=[tf.string, tf.float32, tf.float32, tf.float32, tf.float32,tf.float32,tf.float32],
             name='func'
         )
 
@@ -70,7 +70,11 @@ def create_input_ops(dataset,
         input_ops['img'].set_shape(list(img.shape))
         input_ops['q'].set_shape(list(q.shape))
         input_ops['a'].set_shape(list(a.shape))
-        input_ops['imgDecod'].set_shape(list(imgDecod.shape))
+        input_ops['imgDecod'].set_shape(list(imgDecod.shape)) 
+        input_ops['codImag'].set_shape(list(codImag.shape)) 
+        input_ops['codImagOri'].set_shape(list(codImagOri.shape))
+        
+        
         
 
     # batchify
