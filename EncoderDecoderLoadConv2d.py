@@ -39,7 +39,7 @@ matplotlib.use('TkAgg')
 def encoded(inputs): 
   
   # Conv Block 1 -> BatchNorm->leaky Relu
-  encoded = tf.keras.layers.Conv2D(43, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
+  encoded = tf.keras.layers.Conv2D(30, kernel_size=3, strides= 1, padding='same', name='conv_1')(inputs)
   encoded = tf.keras.layers.BatchNormalization(name='batchnorm_1')(encoded)
   encoded = tf.keras.layers.LeakyReLU(name='leaky_relu_1')(encoded)
   # Conv Block 2 -> BatchNorm->leaky Relu
@@ -64,7 +64,7 @@ def decoded(inputs):
     
     #Decoder
     # DeConv Block 1-> BatchNorm->leaky Relu
-    decoded = tf.keras.layers.Conv2DTranspose(43, kernel_size=3, strides= 1, padding='same',name='conv_transpose_1')(inputs)
+    decoded = tf.keras.layers.Conv2DTranspose(30, kernel_size=3, strides= 1, padding='same',name='conv_transpose_1')(inputs)
     decoded = tf.keras.layers.BatchNormalization(name='batchnorm_4')(decoded)
     decoded = tf.keras.layers.LeakyReLU(name='leaky_relu_4')(decoded)
     # DeConv Block 2-> BatchNorm->leaky Relu
@@ -174,7 +174,7 @@ inputs = tf.keras.Input(shape=(128, 128, 3), name='input_layer')
 autoencoded = Model(inputs,encoded(inputs))
 autoencoded.compile(loss=SSIMLoss, optimizer='adam', metrics=SSIMLoss)
 autoencoded.summary()
-loadWeights(autoencoded,"C:\Source\PesquisaMestrado\decoder\model3","C:\Source\PesquisaMestrado\decoder\weights3" )
+loadWeights(autoencoded,"C:\Source\PesquisaMestrado\decoder1\model3","C:\Source\PesquisaMestrado\decoder1\weights4" )
 
 x_test,train_imgs = loadDataBase() 
 
