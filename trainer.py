@@ -51,10 +51,10 @@ class Trainer(object):
         # --- input ops ---
         self.batch_size = config.batch_size
 
-        _, self.batch_train =  create_input_ops(dataset, self.batch_size,
+        _, self.batch_train,a =  create_input_ops(dataset, self.batch_size,
         #, imgs =  create_input_ops(dataset, self.batch_size,
                                                is_training=True)
-        _, self.batch_test =  create_input_ops(dataset_test, self.batch_size,
+        _, self.batch_test,a =  create_input_ops(dataset_test, self.batch_size,
         #0,imgs =  create_input_ops(dataset_test, self.batch_size,
                                               is_training=False)
 

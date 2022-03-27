@@ -12,7 +12,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-          "args": [ "--dataset_path", "Sort-of-CLEVR_default", "--model", "rn", "--batch_size", "60","--checkpoint" , "C:\\teste\\model-22000" ]           
+          "args": [ "--dataset_path", "Sort-of-CLEVR_default", "--model", "rn", "--batch_size", "60",  "--checkpoint" , "C:\\teste\\model-58000"  ] //"--checkpoint" , "C:\\teste\\model-22000"          
         }
     ]
 }
