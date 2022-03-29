@@ -13,7 +13,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-          "args": [ "--dataset_path", "Sort-of-CLEVR_teste_decode-image", "--model", "rn", "--batch_size", "60" ] 
+          //"args": [ "--dataset_path", "Sort-of-CLEVR_teste_decode-image", "--model", "rn", "--batch_size", "60" ] 
         }
     ]
   }

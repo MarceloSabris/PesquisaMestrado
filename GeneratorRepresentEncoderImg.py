@@ -133,7 +133,7 @@ def generator(config):
         # the data of this array is respresent below 
         #0-Type   1 to 3-Color RGB
         #   4-p1 - top  5-p2 - down ,  6- p3 - left  , 7 - right  
-        codImag = np.zeros((NUM_SHAPE,8))
+        codImag = np.zeros((2,2,6))
         # Generate I: [img_size, img_size, 3]
         img = Image.new('RGB', (img_size, img_size), color=BG_COLOR)
         drawer = ImageDraw.Draw(img)
@@ -144,33 +144,40 @@ def generator(config):
         coin = np.random.rand(NUM_SHAPE)
         X = []
         Y = []
+        j = 0
+        k = 0
         for i in range(NUM_SHAPE):
             x = idx_coor[i] % N_GRID
             y = (N_GRID - np.floor(idx_coor[i] / N_GRID) - 1).astype(np.uint8)
-            codImag[i][4] = x
-            codImag[i][5] = y
+
+            
             # sqaure terms are added to remove ambiguity of distance
             position = ((x+0.5)*block_size-shape_size+x**2, (y+0.5)*block_size-shape_size+y**2,
                         (x+0.5)*block_size+shape_size+x**2, (y+0.5)*block_size+shape_size+y**2)
-            codImag[i][4] = position[0] / 7
-            codImag[i][5] = position[1] /7
-            codImag[i][6] = position[2] /7
-            codImag[i][7] = position[3] /7
             
-            codImag[i][1] = COLOR[idx_color_shape[i]][0] /7
-            codImag[i][2] = COLOR[idx_color_shape[i]][1] /7
-            codImag[i][3] = COLOR[idx_color_shape[i]][2] /7
+           
+            
+            codImag[j][k][3] = COLOR[idx_color_shape[i]][0] 
+            codImag[j][k][4] = COLOR[idx_color_shape[i]][1] 
+            codImag[j][k][5] = COLOR[idx_color_shape[i]][2] 
 
             X.append((x+0.5)*block_size+x**2)
             Y.append((y+0.5)*block_size+y**2)
             if coin[i] < 0.5:
-                codImag[i][0] = 0
+                codImag[j][k][2] = 0
                 drawer.ellipse(position, fill=COLOR[idx_color_shape[i]])
             else:
-                codImag[i][0] = 1
+                codImag[j][k][2] = 1
                 drawer.rectangle(position, fill=COLOR[idx_color_shape[i]])
-
-        # Generate its representation
+            
+            codImag[j][k][0] = (x+0.5)*block_size+x**2
+            codImag[j][k][1] = (y+0.5)*block_size+y**2
+            if k==1:
+               j+=1
+               k=0
+            else:
+               k+=1
+         # Generate its representation
         color = idx_color_shape[:NUM_SHAPE]
         shape = coin < 0.5
         rep = Representation(np.stack(X).astype(np.int),
@@ -249,9 +256,8 @@ def generator(config):
             grp['question'] = Q[j, :]
             grp['answer'] = A[j, :]
             grp['encoded'] = E
-            codImagRes = np.resize(codImag,(4,4,4))
-            grp['codImag'] = codImagRes
-            grp['codImagOrig'] = np.reshape (codImag,  (4,4,2))
+            grp['codImag'] = codImag
+            grp['codImagOrig'] =codImag
             count += 1
             if count % (dataset_size / 100) == 0:
                 bar.update(count / (dataset_size / 100))
@@ -272,7 +278,7 @@ def check_path(path):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dir_name', type=str,default='Sort-of-CLEVR_teste_decode-image')
+    parser.add_argument('--dir_name', type=str,default='Sort-of-CLEVR_teste_decode-image1')
     parser.add_argument('--dataset_size', type=int, default=50000)
     
     parser.add_argument('--img_size', type=int, default=128)

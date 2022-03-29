@@ -14,10 +14,6 @@ from ops import conv2d, fc
 from util import log
 import numpy as np
 from vqa_util import question2str, answer2str
-
-
-
-
 class Model(object):
 
     def __init__(self, config,
@@ -222,8 +218,8 @@ class Model(object):
                                      collections=["plot_summaries"])
         except:
             pass
-        tf.summary.scalar("loss/accuracy", self.accuracy)
-        tf.summary.scalar("loss/cross_entropy", self.loss)
+        tf.compat.v1.summary.scalar("loss/accuracy", self.accuracy)
+        tf.compat.v1.summary.scalar("loss/cross_entropy", self.loss)
         log.warn('Successfully loaded the model.')
     
    

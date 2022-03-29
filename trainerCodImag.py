@@ -87,8 +87,10 @@ class Trainer(object):
         self.plot_summary_op =  tf.compat.v1.summary.merge_all()
       
         self.saver = tf.compat.v1.train.Saver(max_to_keep=1000)
+        
         self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
-
+    
+     
         self.checkpoint_secs = 600  # 10 min
         self.acuracy = [] 
         self.step = []
@@ -140,7 +142,7 @@ class Trainer(object):
         for s in xrange(max_steps):
             step, accuracy, summary, loss, step_time = \
                 self.run_single_step(self.batch_train, step=s, is_train=True)
-
+            
             # periodic inference
             accuracy_test = \
                 self.run_test(self.batch_test, is_train=False)
@@ -148,7 +150,9 @@ class Trainer(object):
             if s % 100 == 0:
                 self.log_step_message(step, accuracy, accuracy_test, loss, step_time)
 
-            self.summary_writer.add_summary(summary, global_step=step)
+            self.summary_writer.add_summary(summary, global_step=step)         
+
+                  
 
             if s % output_save_step == 0:
                 log.infov("Saved checkpoint at %d", s)
