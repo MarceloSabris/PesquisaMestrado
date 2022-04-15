@@ -103,8 +103,8 @@ class Model(object):
                 g_1 = fc(tf.concat([o_i, o_j, q], axis=1), 256, name='g_1')
                 g_2 = fc(g_1, 256, name='g_2')
                 g_3 = fc(g_2, 256, name='g_3')
-                g_4 = fc(g_3, 256, name='g_4')
-                return g_4
+                #g_4 = fc(g_3, 256, name='g_4')
+                return g_3
 
        
    
@@ -185,8 +185,8 @@ class Model(object):
             with tf.compat.v1.variable_scope(scope) as scope:
                 log.warn(scope.name)
                 fc_1 = fc(g, 256, name='fc_1')
-                fc_2 = fc(fc_1, 256, name='fc_2')
-                fc_2 = slim.dropout(fc_2, keep_prob=0.5, is_training=is_train, scope='fc_3/')
+                #fc_2 = fc(fc_1, 256, name='fc_2')
+                fc_2 = slim.dropout(fc_1, keep_prob=0.5, is_training=is_train, scope='fc_3/')
                 fc_3 = fc(fc_2, n, activation_fn=None, name='fc_3')
                 return fc_3
 

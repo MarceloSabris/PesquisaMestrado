@@ -16,14 +16,14 @@ import time
 import tensorflow as tf
 import tf_slim as slim
 import numpy
-
+import json
 
 class Trainer(object):
 
     @staticmethod
     
     def get_model_class(model_name):
-        from model_rn_image_imageRepre import Model
+        from model_rn_image_imageRepre_128 import Model
         return Model
 
     def __init__(self,
@@ -113,6 +113,7 @@ class Trainer(object):
             device_count={'GPU': 1},
         )
         self.session = self.supervisor.prepare_or_wait_for_session(config=session_config)
+        self.session.graph._unsafe_unfinalize()
 
         self.ckpt_path = config.checkpoint
         if self.ckpt_path is not None:
@@ -135,8 +136,7 @@ class Trainer(object):
         log.infov("Training Starts!")
         pprint(self.batch_train)
         #alterei aqui 
-        max_steps = 200000
-
+        max_steps =200000  
         output_save_step = 2000
 
         for s in xrange(max_steps):
@@ -147,8 +147,19 @@ class Trainer(object):
             accuracy_test = \
                 self.run_test(self.batch_test, is_train=False)
 
+           
             if s % 100 == 0:
                 self.log_step_message(step, accuracy, accuracy_test, loss, step_time)
+                temp=[]
+                temp.append('step:'+ str(step))
+                temp.append('accuracy:'+ str(accuracy))
+                temp.append('accuracy_test:'+ str(accuracy_test))
+                temp.append('loss:'+ str(loss))
+                temp.append('loss:'+ str(step_time))
+                self.GravarArquivo(temp,'Logs',)
+
+
+
 
             self.summary_writer.add_summary(summary, global_step=step)         
 
@@ -190,6 +201,17 @@ class Trainer(object):
 
         return step, accuracy, summary, loss,  (_end_time - _start_time)
 
+    def GravarArquivo ( self,data_dict,fname):
+      
+       print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
+       os.makedirs(self.train_dir, exist_ok=True)
+       fname = self.train_dir + "/" + fname +".json"
+       # Create file
+       with open(fname, 'a') as outfile:
+         json.dump(data_dict, outfile, ensure_ascii=False, indent=2) 
+         outfile.write('\n')
+         outfile.close() 
+
     def run_test(self, batch, is_train=False, repeat_times=8):
 
         batch_chunk = self.session.run(batch)
@@ -197,7 +219,7 @@ class Trainer(object):
         accuracy_test = self.session.run(
             self.model.accuracy, feed_dict=self.model.get_feed_dict(batch_chunk, is_training=False)
         )
-
+        #tf.compat.v1.summary.scalar("loss/accuracy_test", accuracy_test)
         return accuracy_test
 
     def log_step_message(self, step, accuracy, accuracy_test, loss, step_time, is_train=True):
