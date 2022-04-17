@@ -157,9 +157,13 @@ def generator(config):
             
            
             
-            codImag[j][k][3] = COLOR[idx_color_shape[i]][0] 
-            codImag[j][k][4] = COLOR[idx_color_shape[i]][1] 
-            codImag[j][k][5] = COLOR[idx_color_shape[i]][2] 
+            #codImag[j][k][3] = COLOR[idx_color_shape[i]][0] 
+            #codImag[j][k][4] = COLOR[idx_color_shape[i]][1] 
+            #codImag[j][k][5] = COLOR[idx_color_shape[i]][2] 
+
+            codImag[j][k][3] = ColorRepres[idx_color_shape[i]][0] 
+            codImag[j][k][4] = ColorRepres[idx_color_shape[i]][1] 
+            codImag[j][k][5] = ColorRepres[idx_color_shape[i]][2] 
 
             X.append((x+0.5)*block_size+x**2)
             Y.append((y+0.5)*block_size+y**2)
@@ -278,7 +282,7 @@ def check_path(path):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--dir_name', type=str,default='Sort-of-CLEVR_teste_decode-image1')
+    parser.add_argument('--dir_name', type=str,default='Sort-of-CLEVR_teste_decode-image2')
     parser.add_argument('--dataset_size', type=int, default=50000)
     
     parser.add_argument('--img_size', type=int, default=128)
