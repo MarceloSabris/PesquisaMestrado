@@ -23,7 +23,7 @@ class Trainer(object):
     @staticmethod
     
     def get_model_class(model_name):
-        from model_rn_image_imageRepre_128 import Model
+        from model_rn_image_imageRepre_camada2 import Model
         return Model
 
     def __init__(self,

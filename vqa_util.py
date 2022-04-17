@@ -13,6 +13,14 @@ COLOR = [
     (0, 150, 150),
     # add more colors here if needed
 ]
+ColorRepres = [  
+    (0,0,1),
+    (0,1,0),
+    (1,0,0),
+    (1,1,0),
+    (1,0,1),
+    (0,1,1)
+] 
 
 N_GRID = 4
 NUM_COLOR = len(COLOR)
