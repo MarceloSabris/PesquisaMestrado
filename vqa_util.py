@@ -22,6 +22,15 @@ ColorRepres = [
     (0,1,1)
 ] 
 
+ColorRepres2 = [  
+    (0,0,0,0,0,1),
+    (0,0,0,0,1,0),
+    (0,0,0,1,0,0),
+    (0,0,1,0,0,0),
+    (0,1,0,0,0,0),
+    (1,0,0,0,0,0)
+] 
+
 N_GRID = 4
 NUM_COLOR = len(COLOR)
 # the number of objects presented in each image
