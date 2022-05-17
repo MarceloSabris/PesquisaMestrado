@@ -131,9 +131,10 @@ def generator(config):
     def generate_sample(img_size):
         #generate a cod image to represent the shapes 
         # the data of this array is respresent below 
-        #0-Type   1 to 3-Color RGB
-        #   4-p1 - top  5-p2 - down ,  6- p3 - left  , 7 - right  
-        codImag = np.zeros((2,2,6))
+        # 0 e 1 x ou y 
+        # 2 - tipo 
+        # 3 4 5 6 7  8
+        codImag = np.zeros((2,2,9))
         # Generate I: [img_size, img_size, 3]
         img = Image.new('RGB', (img_size, img_size), color=BG_COLOR)
         drawer = ImageDraw.Draw(img)
@@ -161,9 +162,17 @@ def generator(config):
             #codImag[j][k][4] = COLOR[idx_color_shape[i]][1] 
             #codImag[j][k][5] = COLOR[idx_color_shape[i]][2] 
 
-            codImag[j][k][3] = ColorRepres[idx_color_shape[i]][0] 
-            codImag[j][k][4] = ColorRepres[idx_color_shape[i]][1] 
-            codImag[j][k][5] = ColorRepres[idx_color_shape[i]][2] 
+            #codImag[j][k][3] = ColorRepres[idx_color_shape[i]][0] 
+            #codImag[j][k][4] = ColorRepres[idx_color_shape[i]][1] 
+            #codImag[j][k][5] = ColorRepres[idx_color_shape[i]][2] 
+
+
+            codImag[j][k][3] = ColorRepres2[idx_color_shape[i]][0] 
+            codImag[j][k][4] = ColorRepres2[idx_color_shape[i]][1] 
+            codImag[j][k][5] = ColorRepres2[idx_color_shape[i]][2] 
+            codImag[j][k][6] = ColorRepres2[idx_color_shape[i]][3] 
+            codImag[j][k][7] = ColorRepres2[idx_color_shape[i]][4] 
+            codImag[j][k][8] = ColorRepres2[idx_color_shape[i]][5] 
 
             X.append((x+0.5)*block_size+x**2)
             Y.append((y+0.5)*block_size+y**2)
@@ -234,6 +243,9 @@ def generator(config):
     # output files
     f = h5py.File(os.path.join(dir_name, 'data.hy'), 'w')
     id_file = open(os.path.join(dir_name, 'id.txt'), 'w')
+    idTipo_file = open(os.path.join(dir_name, 'idTipo.txt'), 'w')
+
+
 
     # progress bar
     bar = progressbar.ProgressBar(maxval=100,
@@ -244,7 +256,10 @@ def generator(config):
     count = 0
     count = 0
     encoded = creatModelDecode((128,128,3))
-     
+    somatipoFacil=0
+    somatipoDificil =0 
+    facil =0
+    dificil =0
     while(1):
         I, R,codImag = generate_sample(config.img_size)
         A = generate_answer(R)
@@ -255,6 +270,27 @@ def generator(config):
         for j in range(NUM_SHAPE*NUM_Q):
             id = '{}'.format(count)
             id_file.write(id+'\n')
+            cor = 0
+            usoucor =0
+            questao = 0
+            for p in range(len(Q[j, :])) : 
+                if (Q[j, p] == True) :
+                    if (usoucor == 0 ) :
+                        cor = p
+                        usoucor = 1
+                    else: 
+                        questao =p  
+                if questao > 8 :
+                   tipo =1 
+                else: 
+                   tipo =0
+            idTipo_file.write(id + "- Cor: " +str(cor) + "/quest:" + str(questao) + "/tipo:" + str(tipo) +'\n')
+            
+            if tipo == 1: 
+               somatipoDificil = somatipoDificil +1
+            else :
+               somatipoFacil= somatipoFacil+1
+
             grp = f.create_group(id)
             grp['image'] = I
             grp['question'] = Q[j, :]
@@ -269,6 +305,9 @@ def generator(config):
                 bar.finish()
                 f.close()
                 id_file.close()
+                id_file.close()
+                log.info('qtd facil {} qtd dificil  {} .'
+                         .format(somatipoFacil, somatipoDificil))
                 log.info('Dataset generated under {} with {} samples.'
                          .format(dir_name, dataset_size))
                 return
