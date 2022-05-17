@@ -23,7 +23,7 @@ class Trainer(object):
     @staticmethod
     
     def get_model_class(model_name):
-        from model_rn_image_imageRepre_camada2 import Model
+        from model_rn_image_imageRepre_camada2_9Obj import Model
         return Model
 
     def __init__(self,
@@ -136,7 +136,7 @@ class Trainer(object):
         log.infov("Training Starts!")
         pprint(self.batch_train)
         #alterei aqui 
-        max_steps =200000  
+        max_steps =130000  
         output_save_step = 2000
 
         for s in xrange(max_steps):
@@ -259,7 +259,7 @@ def main():
     parser.add_argument('--model', type=str, default='rn', choices=['rn', 'baseline'])
     parser.add_argument('--prefix', type=str, default='default')
     parser.add_argument('--checkpoint', type=str, default=None)
-    parser.add_argument('--dataset_path', type=str, default='Sort-of-CLEVR_teste_decode-image')
+    parser.add_argument('--dataset_path', type=str, default='Sort-of-CLEVR_teste_decode-image3')
     parser.add_argument('--learning_rate', type=float, default=2.5e-4)
     parser.add_argument('--lr_weight_decay', action='store_true', default=False)
     config = parser.parse_args()

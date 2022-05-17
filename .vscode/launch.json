@@ -13,8 +13,8 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-          //"args": [ "--dataset_path", "Sort-of-CLEVR_teste_decode-image", "--model", "rn", "--batch_size", "60" ] 
+            "args": [ "--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "60" ] 
         }
     ]
   }
-  //"--checkpoint" , "C:\\teste\\model-22000"          
+  //           //"--checkpoint" , "C:\\teste\\model-22000"          

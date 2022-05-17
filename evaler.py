@@ -136,12 +136,7 @@ class Evaler(object):
 
     @staticmethod
     def get_model_class(model_name):
-        if model_name == 'baseline':
-            from model_baseline import Model
-        elif model_name == 'rn':
-            from model_rn import Model
-        else:
-            raise ValueError(model_name)
+        from model_rn_image_imageRepre_camada2_9Obj  import Model
         return Model
 
     def __init__(self,
