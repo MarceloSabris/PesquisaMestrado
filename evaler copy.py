@@ -4,7 +4,7 @@ from __future__ import print_function
 from numpy.lib.function_base import append
 
 from six.moves import xrange
-
+from model_rn_image_imageRepre_camada2_9Obj  import Model
 from util import log
 
 from input_ops import create_input_ops, check_data_id
@@ -26,19 +26,18 @@ class EvalManager(object):
     ArrayQuestoesCertas =[]
     ArrarQuestoesErradas=[]
     
-    def __init__(self,dataset,checkpoint_path):
+    def __init__(self,dataset,name_file_report):
         # collection of batches (not flattened)
         self._ids = []
         self._predictions = []
         self._groundtruths = []
         self._questions = [] 
         self._images = [] 
-        self.percentageData = 'model2000'
+        self.name_file_report =name_file_report
         self.ArrayQuestoesCertas =[]
         self.ArrarQuestoesErradas=[]
         self.dataset = dataset
         self._answers =[]
-        self.checkpoint_path = checkpoint_path
    
 
     def add_batch(self, full, prediction, groundtruth):
@@ -62,8 +61,7 @@ class EvalManager(object):
         correct_prediction_nr = 0
         count_nr = 0
         correct_prediction_r = 0
-        correctQuest =0
-        errorQuest = 0
+        error_prediction_r = 0
         count_r = 0
         
         
@@ -76,64 +74,60 @@ class EvalManager(object):
                 anserPred = np.zeros((len(a[i]))) 
                 anserPred[np.argmax(pred[i,:])] = 1 
                 anserPred1 = answer2str(anserPred)
-                q_num = np.argmax(qv[NUM_COLOR:])
-                if  q_num > 2:
+                #if np.argmax(gt[i, :]) < NUM_COLOR:
+                if 1==1 :
                     count_r += 1
                     
                     if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
                         correct_prediction_r += 1
-                        correctQuest += 1 
-                        #self.ArrayQuestoesCertas.append(str(int(id[i])))
                         self.ArrayQuestoesCertas.append("qestao numero : " +str(int(id[i])))
                         self.ArrayQuestoesCertas.append(quest)
-                        self.ArrayQuestoesCertas.append(answer)
-                        self.ArrayQuestoesCertas.append(anserPred1)
-                        self.ArrayQuestoesCertas.append("tipo : Relacional")
+                        self.ArrayQuestoesCertas.append("Reposta Certa:" + answer)
+                        self.ArrayQuestoesCertas.append("Reposta Predicada:" + anserPred1)
+                        #self.ArrayQuestoesCertas.append("tipo : Relacional")
                     else:
-                        errorQuest += 1 
-                        #self.ArrarQuestoesErradas.append(str(int(id[i])))
+                        error_prediction_r = error_prediction_r + 1
                         self.ArrarQuestoesErradas.append ("qestao numero : " + str(int(id[i])))
                         self.ArrarQuestoesErradas.append(quest)
-                        self.ArrarQuestoesErradas.append("Reposta errada:" + anserPred1)  
-                        self.ArrarQuestoesErradas.append("Resposta certa:" + answer) 
-                        self.ArrarQuestoesErradas.append("tipo : Relacional")
+                        self.ArrarQuestoesErradas.append('Reposta Predicada: ' + anserPred1)  
+                        self.ArrarQuestoesErradas.append( "Reposta Certa:" + answer) 
+                        #self.ArrayQuestoesCertas.append("tipo : Relacional")
 
                 # non-relational
-                else:
-                    count_nr += 1
-                    if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
-                        correctQuest += 1 
-                        correct_prediction_nr += 1
-                        #self.ArrayQuestoesCertas.append(str(int(id[i])))
-                        self.ArrayQuestoesCertas.append("qestao numero : " +str(int(id[i])))
-                        self.ArrayQuestoesCertas.append(quest)
-                        self.ArrayQuestoesCertas.append(answer)
-                        self.ArrayQuestoesCertas.append(anserPred1)
-                        self.ArrayQuestoesCertas.append("tipo : Nao-Relacional")
-                    else:
-                        errorQuest +=1
-                        #self.ArrarQuestoesErradas.append ( str(int(id[i])))
-                        self.ArrarQuestoesErradas.append ("qestao numero : " + str(int(id[i])))
-                        self.ArrarQuestoesErradas.append(quest)
-                        self.ArrarQuestoesErradas.append("Reposta errada:" + anserPred1)  
-                        self.ArrarQuestoesErradas.append("Resposta certa:" + answer) 
-                        self.ArrarQuestoesErradas.append("tipo : Nao-Relacional")
+            #    else:
+            #        count_nr += 1
+            #        if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
+            #            correct_prediction_nr += 1
+            #            self.ArrayQuestoesCertas.append("qestão numero : " +str(int(id[i])))
+            #            self.ArrayQuestoesCertas.append(quest)
+            #            self.ArrayQuestoesCertas.append(answer)
+            #            self.ArrayQuestoesCertas.append(anserPred1)
+                        
+                        #self.ArrayQuestoesCertas.append(answer2str(np.argmax(pred[i, :])))
+            #            self.ArrayQuestoesCertas.append("tipo : Nao-Relacional")
+            #        else:
+            #            self.ArrarQuestoesErradas.append ("qestão numero : " + str(int(id[i])))
+            #            self.ArrarQuestoesErradas.append(quest)
+            #            #self.ArrarQuestoesErradas.append('Repost errada: ' + answer2str(np.argmax(pred[i, :])) ) 
+            #            self.ArrarQuestoesErradas.append('Repost errada: ' +anserPred1) 
+            #            self.ArrarQuestoesErradas.append( " resp certa:" + answer) 
+            #            self.ArrayQuestoesCertas.append("tipo : Nao-Relacional")
 
-        avg_nr = float(correct_prediction_nr)/count_nr
-        log.infov("Average accuracy of non-relational questions: {}%".format(avg_nr*100))
-        avg_r = float(correct_prediction_r)/count_r
-        log.infov("Average accuracy of relational questions: {}%".format(avg_r*100))
+        #avg_nr = float(correct_prediction_nr)/count_nr
+        #log.infov("Average accuracy of non-relational questions: {}%".format(avg_nr*100))
+        #avg_r = float(correct_prediction_r)/count_r
+        #log.infov("Average accuracy of relational questions: {}%".format(avg_r*100))
         avg = float(correct_prediction_r+correct_prediction_nr)/(count_r+count_nr)
         log.infov("Average accuracy: {}%".format(avg*100))
-        file_name = self.checkpoint_path.split("\\")[2]
-        self.GravarArquivo(file_name,self.ArrarQuestoesErradas,"questaoErradaTreinamento",errorQuest )
-        self.GravarArquivo(file_name,self.ArrayQuestoesCertas,"questaoCertaTreinamento",correctQuest)
-       
+        
+        self.GravarArquivo("100",self.ArrarQuestoesErradas,"questaoErrada_"+ self.name_file_report ,correct_prediction_r )
+        self.GravarArquivo("100",self.ArrayQuestoesCertas,"questaoCerta_"+ self.name_file_report,error_prediction_r)
+
        
 
-    def GravarArquivo (self,percentageData, data_dict,fname,qtd):
-      fname = fname +"_" +str(qtd) + '.json'
-      print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
+    def GravarArquivo (self,percentageData, data_dict,fname,qtdQuestao):
+      fname = fname +"_" +str(qtdQuestao) + '.json'
+      print("gravar arquivo: " + fname + " qtd: " +  str(qtdQuestao))
       os.makedirs('Percentage_'+ str(percentageData) , exist_ok=True)
       fname = 'Percentage_'+ str(percentageData) + "/" + fname
       # Create file
@@ -142,15 +136,12 @@ class EvalManager(object):
         outfile.close()
 
 class Evaler(object):
-
-    @staticmethod
-    def get_model_class(model_name):
-        from model_rn_image_imageRepre_camada2_9Obj  import Model
-        return Model
-
+        
     def __init__(self,
                  config,
-                 dataset):
+                 dataset,
+                 nameFileReport):
+        self.name_file_report = nameFileReport
         self.config = config
         self.train_dir = config.train_dir
 
@@ -162,20 +153,20 @@ class Evaler(object):
         self.dataset = dataset
 
         check_data_id(dataset, config.data_id)
-        _, self.batch ,img  = create_input_ops(dataset, self.batch_size,
+        _, self.batch,img = create_input_ops(dataset, self.batch_size,
                                          data_id=config.data_id,
                                          is_training=False,
                                          shuffle=False)
 
         # --- create model ---
-        Model = self.get_model_class(config.model)
+        
         log.infov("Using Model class : %s", Model)
         self.model = Model(config)
 
         self.global_step = tf.compat.v1.train.get_or_create_global_step(graph=None)
         self.step_op = tf.no_op(name='step_no_op')
 
-        #tf.random.set_seed(1234)
+        tf.random.set_seed(1234)
 
         session_config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
@@ -196,25 +187,48 @@ class Evaler(object):
         else:
             log.info("Checkpoint path : %s", self.checkpoint_path)
 
+    def SetDataSet (self,dataset,config, nameFileReport):
+      self.name_file_report = nameFileReport 
+      self.dataset = dataset
+      #self.dataset = dataset
+      check_data_id(dataset, config.data_id)
+      _, self.batch,img = create_input_ops(dataset, self.batch_size,
+                                         data_id=config.data_id,
+                                         is_training=False,
+                                         shuffle=False)
+      self.checkpoint_path = config.checkpoint_path
+      if self.checkpoint_path is None and self.train_dir:
+            self.checkpoint_path = tf.train.latest_checkpoint(self.train_dir)
+      if self.checkpoint_path is None:
+            log.warn("No checkpoint is given. Just random initialization :-)")
+            self.session.run(tf.global_variables_initializer())
+      else:
+            log.info("Checkpoint path : %s", self.checkpoint_path)
+      session_config = tf.compat.v1.ConfigProto(
+            allow_soft_placement=True,
+            gpu_options=tf.compat.v1.GPUOptions(allow_growth=True),
+            device_count={'GPU': 1},
+        )
+        
+        
     def eval_run(self):
-        # load checkpoint
-        if self.checkpoint_path:
-            self.saver.restore(self.session, self.checkpoint_path)
-            log.info("Loaded from checkpoint!")
+        # load checkpointif self.checkpoint_path:
+        self.saver.restore(self.session, self.checkpoint_path)
+        log.info("Loaded from checkpoint!")
 
+        
         log.infov("Start 1-epoch Inference and Evaluation")
 
         log.info("# of examples = %d", len(self.dataset))
         length_dataset = len(self.dataset)
 
-        max_steps = int(length_dataset / self.batch_size) 
+        max_steps = int(length_dataset / self.batch_size) + 1
         log.info("max_steps = %d", max_steps)
-
         coord = tf.train.Coordinator()
         threads =tf.compat.v1.train.start_queue_runners(self.session,
                                                coord=coord, start=True)
 
-        evaler = EvalManager(self.dataset,self.checkpoint_path)
+        evaler = EvalManager(self.dataset,self.name_file_report)
         try:
             for s in xrange(max_steps):
                 step, loss, step_time, batch_chunk, prediction_pred, prediction_gt = \
@@ -225,11 +239,12 @@ class Evaler(object):
         except Exception as e:
             coord.request_stop(e)
 
-        coord.request_stop()
-        try:
-            coord.join(threads, stop_grace_period_secs=3)
-        except RuntimeError as e:
-            log.warn(str(e))
+        #coord.request_stop()
+        #try:
+        #    coord.join(threads, stop_grace_period_secs=3)
+        #except RuntimeError as e:
+        #    log.warn(str(e))
+
 
         evaler.report()
         log.infov("Evaluation complete.")
@@ -288,17 +303,26 @@ def main():
         import sort_of_clevr as dataset
     else:
         raise ValueError(path)
-
     config.data_info = dataset.get_data_info()
     config.conv_info = dataset.get_conv_info()
     dataset_train, dataset_test = dataset.create_default_splits(path)
+    caminhos = config.checkpoint_path.split(",")
+    config.checkpoint_path = caminhos[0]
+    file_name = config.checkpoint_path.split("\\")[2]
+    evaler = Evaler(config, dataset_test,  "test"+ "_"+ file_name)
+    for caminho in  caminhos:
+        config.checkpoint_path = caminho
+        file_name = config.checkpoint_path.split("\\")[2]
+        log.warning("dataset: %s", config.dataset_path)
 
-    evaler = Evaler(config, dataset_train)
+        evaler.SetDataSet(dataset_test ,config,  "train"+ "_"+ file_name)
+        
+        log.warning("dataset: %s", config.dataset_path)
+        evaler.eval_run()
 
+        evaler.SetDataSet(dataset_train,config, "test"+ "_"+ file_name)
+        evaler.eval_run()
 
-    log.warning("dataset: %s", config.dataset_path)
-
-    evaler.eval_run()
 
 if __name__ == '__main__':
     main()

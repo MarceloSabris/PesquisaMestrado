@@ -77,8 +77,8 @@ def get_conv_info():
     return np.array([24, 24, 24, 24])
 
 
-def create_default_splits(path, is_train=True):
-    ids = all_ids(path)
+def create_default_splits(path, is_train=True, is_shuffe = False):
+    ids = all_ids(path,is_shuffe)
     n = len(ids)
 
     num_trains = int(n*0.8)
@@ -93,7 +93,7 @@ def return_dataset(path):
     return Dataset(ids[:n], path, name='full', is_train=False)
   
 
-def all_ids(path):
+def all_ids(path,is_shuffe):
     id_filename = 'id.txt'
 
     id_txt = os.path.join(path, id_filename)
@@ -102,5 +102,6 @@ def all_ids(path):
             _ids = [s.strip() for s in fp.readlines() if s]
     except:
         raise IOError('Dataset not found. Please make sure the dataset was generated.')
-    rs.shuffle(_ids)
+    if (is_shuffe):
+        rs.shuffle(_ids)
     return _ids

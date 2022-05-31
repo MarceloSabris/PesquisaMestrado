@@ -48,11 +48,11 @@ def create_input_ops(dataset,
     with tf.device("/cpu:0"), tf.name_scope(scope):
         tf.compat.v1.disable_eager_execution()
         input_ops['id'] = tf.compat.v1.train.string_input_producer(
-           tf.convert_to_tensor(data_id), capacity=128
+           tf.convert_to_tensor(data_id), shuffle=False, capacity=128
         ).dequeue(name='input_ids_dequeue')
 
         img, q, a,imgDecod,codImag,codImagOri = dataset.get_data(data_id[0])
-        #for id in data_id:
+  #for id in data_id:
           #   imgs.append(load_fn(id)[1])
         #imgs = np.array(imgs)
         def load_fn(id):
@@ -69,14 +69,11 @@ def create_input_ops(dataset,
         input_ops['id'].set_shape([])
         input_ops['img'].set_shape(list(img.shape))
         input_ops['q'].set_shape(list(q.shape))
-        input_ops['a'].set_shape(list(a.shape))
+        input_ops['a'].set_shape(list(a.shape)) 
         input_ops['imgDecod'].set_shape(list(imgDecod.shape)) 
         input_ops['codImag'].set_shape(list(codImag.shape)) 
         input_ops['codImagOri'].set_shape(list(codImagOri.shape))
         
-        
-        
-
     # batchify
     capacity = 2 * batch_size * num_threads
     min_capacity = min(int(capacity * 0.75), 1024)

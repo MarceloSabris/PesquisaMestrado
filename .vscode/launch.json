@@ -11,11 +11,11 @@
             "type": "python",
           
             "request": "launch",
-            
+
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": [ "--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "10000" ,"--checkpoint" , "C:\\teste\\model-0,C:\\teste\\model-2000,C:\\teste\\model-4000,C:\\teste\\model-6000,C:\\teste\\model-8000,C:\\teste\\model-10000,C:\\teste\\model-12000,C:\\teste\\model-14000C:\\teste\\model-16000;C:\\teste\\model-4000"] 
+            "args": [ "--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "50","--checkpoint","C:\\teste\\model-2000" ]  
         }
     ]
   }
-  //           //          
+  //           "args": [ "--model", "rn", "--batch_size", "50","--checkpoint","C:\\Source\\PesquisaMestrado\\train_dir\\rn-default-Sort-of-CLEVR_default_lr_0.00025-20220520-022157\\model-2000" ] ,"--checkpoint" , "C:\\teste\\model-4000"        //          

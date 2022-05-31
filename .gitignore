@@ -7,3 +7,9 @@ qa_sample/
 *.hy
 *.txt
 *.gz
+Percentage_model-2000/questaoCerta_4116.json
+Percentage_model-2000/questaoCertaTreinamento_16480.json
+Percentage_model-2000/questaoCertaTreinamento_16575.json
+Percentage_model-2000/questaoErrada_5884.json
+Percentage_model-2000/questaoErradaTreinamento_23425.json
+Percentage_model-2000/questaoErradaTreinamento_23520.json

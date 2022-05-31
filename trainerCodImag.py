@@ -52,7 +52,7 @@ class Trainer(object):
         _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,
                                           
                                               is_training=False)
-
+        self.DataSetPath = os.path.join('./datasets', config.dataset_path)
         # --- create model ---
         Model = self.get_model_class(config.model)
         log.infov("Using Model class : %s", Model)
@@ -90,7 +90,8 @@ class Trainer(object):
         
         self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
     
-     
+        
+        self.pathDataSets = os.path.join('./datasets', config.dataset_path)
         self.checkpoint_secs = 600  # 10 min
         self.acuracy = [] 
         self.step = []
@@ -254,6 +255,7 @@ def check_data_path(path):
 
 def main():
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=50)
     parser.add_argument('--model', type=str, default='rn', choices=['rn', 'baseline'])
@@ -262,6 +264,8 @@ def main():
     parser.add_argument('--dataset_path', type=str, default='Sort-of-CLEVR_teste_decode-image3')
     parser.add_argument('--learning_rate', type=float, default=2.5e-4)
     parser.add_argument('--lr_weight_decay', action='store_true', default=False)
+    parser.add_argument('--train_amount_network',  type=int, default=0)
+    
     config = parser.parse_args()
 
     path = os.path.join('./datasets', config.dataset_path)
@@ -281,7 +285,7 @@ def main():
     log.warning("dataset: %s, learning_rate: %f",
                 config.dataset_path, config.learning_rate)
     trainer.train()
-    
+   
 
 if __name__ == '__main__':
     main()
