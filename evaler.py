@@ -76,7 +76,7 @@ class EvalManager(object):
                 anserPred = np.zeros((len(a[i]))) 
                 anserPred[np.argmax(pred[i,:])] = 1 
                 anserPred1 = answer2str(anserPred)
-                q_num = np.argmax(qv[NUM_COLOR:])
+                q_num = np.argmax(q[i][6:])
                 if  q_num > 2:
                     count_r += 1
                     
@@ -84,18 +84,20 @@ class EvalManager(object):
                         correct_prediction_r += 1
                         correctQuest += 1 
                         #self.ArrayQuestoesCertas.append(str(int(id[i])))
-                        self.ArrayQuestoesCertas.append("qestao numero : " +str(int(id[i])))
+                        self.ArrayQuestoesCertas.append("qestao id numero : " +str(int(id[i])))
                         self.ArrayQuestoesCertas.append(quest)
                         self.ArrayQuestoesCertas.append(answer)
                         self.ArrayQuestoesCertas.append(anserPred1)
+                        self.ArrayQuestoesCertas.append("qestao do tipo : " +str(q_num)) 
                         self.ArrayQuestoesCertas.append("tipo : Relacional")
                     else:
                         errorQuest += 1 
                         #self.ArrarQuestoesErradas.append(str(int(id[i])))
-                        self.ArrarQuestoesErradas.append ("qestao numero : " + str(int(id[i])))
+                        self.ArrarQuestoesErradas.append ("qestao id numero : " + str(int(id[i])))
                         self.ArrarQuestoesErradas.append(quest)
                         self.ArrarQuestoesErradas.append("Reposta errada:" + anserPred1)  
                         self.ArrarQuestoesErradas.append("Resposta certa:" + answer) 
+                        self.ArrarQuestoesErradas.append("qestao do tipo : " +str(q_num))
                         self.ArrarQuestoesErradas.append("tipo : Relacional")
 
                 # non-relational
@@ -105,18 +107,20 @@ class EvalManager(object):
                         correctQuest += 1 
                         correct_prediction_nr += 1
                         #self.ArrayQuestoesCertas.append(str(int(id[i])))
-                        self.ArrayQuestoesCertas.append("qestao numero : " +str(int(id[i])))
+                        self.ArrayQuestoesCertas.append("qestao id numero : " +str(int(id[i])))
                         self.ArrayQuestoesCertas.append(quest)
                         self.ArrayQuestoesCertas.append(answer)
                         self.ArrayQuestoesCertas.append(anserPred1)
+                        self.ArrayQuestoesCertas.append("qestao do tipo : " +str(q_num)) 
                         self.ArrayQuestoesCertas.append("tipo : Nao-Relacional")
                     else:
                         errorQuest +=1
                         #self.ArrarQuestoesErradas.append ( str(int(id[i])))
-                        self.ArrarQuestoesErradas.append ("qestao numero : " + str(int(id[i])))
+                        self.ArrarQuestoesErradas.append ("qestao id numero : " + str(int(id[i])))
                         self.ArrarQuestoesErradas.append(quest)
                         self.ArrarQuestoesErradas.append("Reposta errada:" + anserPred1)  
                         self.ArrarQuestoesErradas.append("Resposta certa:" + answer) 
+                        self.ArrarQuestoesErradas.append("qestao do tipo : " +str(q_num)) 
                         self.ArrarQuestoesErradas.append("tipo : Nao-Relacional")
 
         avg_nr = float(correct_prediction_nr)/count_nr
@@ -126,8 +130,8 @@ class EvalManager(object):
         avg = float(correct_prediction_r+correct_prediction_nr)/(count_r+count_nr)
         log.infov("Average accuracy: {}%".format(avg*100))
         file_name = self.checkpoint_path.split("\\")[2]
-        self.GravarArquivo(file_name,self.ArrarQuestoesErradas,"questaoErradaTreinamento",errorQuest )
-        self.GravarArquivo(file_name,self.ArrayQuestoesCertas,"questaoCertaTreinamento",correctQuest)
+        self.GravarArquivo(file_name,self.ArrarQuestoesErradas,"questaoErradaTeste",errorQuest )
+        self.GravarArquivo(file_name,self.ArrayQuestoesCertas,"questaoCertaTeste",correctQuest)
        
        
 
@@ -291,8 +295,9 @@ def main():
 
     config.data_info = dataset.get_data_info()
     config.conv_info = dataset.get_conv_info()
-    dataset_train, dataset_test = dataset.create_default_splits(path)
-
+    dataset_train = dataset.create_default_splits(path,is_full=True, id_filename="id_test.txt")
+    
+   
     evaler = Evaler(config, dataset_train)
 
 

@@ -28,6 +28,7 @@ class Trainer(object):
 
     def __init__(self,
                  config,
+                 data,
                  dataset,
                  dataset_test):
         self.config = config
@@ -45,12 +46,12 @@ class Trainer(object):
 
         # --- input ops ---
         self.batch_size = config.batch_size
-
-
-        _, self.batch_train,imgs = create_input_ops(dataset, self.batch_size,
+        self.data = data
+        
+        _, self.batch_train,imgs = create_input_ops(dataset, self.batch_size,shuffle=False,
                                                is_training=True)
-        _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,
-                                          
+
+        _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,shuffle=False,                                          
                                               is_training=False)
         self.DataSetPath = os.path.join('./datasets', config.dataset_path)
         # --- create model ---
@@ -70,7 +71,7 @@ class Trainer(object):
                 staircase=True,
                 name='decaying_learning_rate'
             )
-
+        self.QtdTest = len(dataset_test) 
         self.check_op = tf.no_op()
 
         self.optimizer = slim.optimize_loss(
@@ -90,7 +91,7 @@ class Trainer(object):
         
         self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
     
-        
+        self.train_amount_network = config.train_amount_network
         self.pathDataSets = os.path.join('./datasets', config.dataset_path)
         self.checkpoint_secs = 600  # 10 min
         self.acuracy = [] 
@@ -137,26 +138,33 @@ class Trainer(object):
         log.infov("Training Starts!")
         pprint(self.batch_train)
         #alterei aqui 
-        max_steps =130000  
-        output_save_step = 2000
+        max_steps =100000  
+        output_save_step = 1000
+        teste_log_Save = 2000
 
         for s in xrange(max_steps):
+            if ( self.train_amount_network!=0 and s != 0 and s % self.train_amount_network==0):
+                dataset_train = self.data.create_default_splits(os.path.join( self.pathDataSets,'Level'+str(s)),True,True)
+                _, self.batch_train,imgs = create_input_ops(dataset_train, self.batch_size,
+                                               is_training=True)
+                
             step, accuracy, summary, loss, step_time = \
-                self.run_single_step(self.batch_train, step=s, is_train=True)
+                      self.run_single_step(self.batch_train, step=s, is_train=True)
             
-            # periodic inference
-            accuracy_test = \
-                self.run_test(self.batch_test, is_train=False)
+                      
+            if s % teste_log_Save == 0:
 
-           
-            if s % 100 == 0:
-                self.log_step_message(step, accuracy, accuracy_test, loss, step_time)
+                 # periodic inference
+                accuracy_test, step_time_test = \
+                    self.run_test(self.batch_test, is_train=False,QtdTest = self.QtdTest)
+                self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
                 temp=[]
                 temp.append('step:'+ str(step))
+                temp.append('teste - time' + str(step_time_test))
+                temp.append('train- time' + str(step_time))
                 temp.append('accuracy:'+ str(accuracy))
                 temp.append('accuracy_test:'+ str(accuracy_test))
                 temp.append('loss:'+ str(loss))
-                temp.append('loss:'+ str(step_time))
                 self.GravarArquivo(temp,'Logs',)
 
 
@@ -166,8 +174,8 @@ class Trainer(object):
 
                   
 
-            if s % output_save_step == 0:
-                log.infov("Saved checkpoint at %d", s)
+            if (s % output_save_step == 0 or s == max_steps):
+                log.infov("Saved checkpoint at %d", s) 
                 save_path = self.saver.save(self.session,
                                             os.path.join(self.train_dir, 'model'),
                                             global_step=step)
@@ -213,17 +221,21 @@ class Trainer(object):
          outfile.write('\n')
          outfile.close() 
 
-    def run_test(self, batch, is_train=False, repeat_times=8):
-
-        batch_chunk = self.session.run(batch)
-
-        accuracy_test = self.session.run(
-            self.model.accuracy, feed_dict=self.model.get_feed_dict(batch_chunk, is_training=False)
-        )
+    def run_test(self, batch, is_train=False, repeat_times=8,QtdTest = 1):
+        _start_time = time.time()
+        qtdInterator = int(QtdTest/batch['a'].shape[0])
+        accuracy_test = 0
+        for i in range(qtdInterator):
+           batch_chunk = self.session.run(batch)
+           accuracy_teste_step = self.session.run(
+            self.model.accuracy, feed_dict=self.model.get_feed_dict(batch_chunk, is_training=False))
+           accuracy_test =   accuracy_teste_step +accuracy_test
+        
+        _end_time = time.time() 
         #tf.compat.v1.summary.scalar("loss/accuracy_test", accuracy_test)
-        return accuracy_test
+        return (accuracy_test/qtdInterator),(_end_time-_start_time)
 
-    def log_step_message(self, step, accuracy, accuracy_test, loss, step_time, is_train=True):
+    def log_step_message(self, step, accuracy, accuracy_test, loss, step_time, step_time_training,is_train=True):
         self.acuracy.append(accuracy)
         self.step.append(step)
         if step_time == 0:
@@ -232,15 +244,17 @@ class Trainer(object):
         log_fn((" [{split_mode:5s} step {step:4d}] " +
                 "Loss: {loss:.5f} " +
                 "Accuracy : {accuracy:.2f} "
-                "Accuracy test: {accuracy_test:.2f} " +
-                "({sec_per_batch:.3f} sec/batch, {instance_per_sec:.3f} instances/sec) "
+                "Accuracy test: {accuracy_test:.2f} " + 
+                 "({sec_per_batch:.3f} sec/batch, {instance_per_sec:.3f} instances/sec) " +
+                 "({sec_per_batch_test:.3f} sec/batch teste)"
                 ).format(split_mode=(is_train and 'train' or 'val'),
                          step=step,
                          loss=loss,
                          accuracy=accuracy*100,
                          accuracy_test=accuracy_test*100,
                          sec_per_batch=step_time,
-                         instance_per_sec=self.batch_size / step_time
+                         instance_per_sec=self.batch_size / step_time , 
+                         sec_per_batch_test = step_time_training
                          )
                )
 
@@ -277,9 +291,9 @@ def main():
 
     config.data_info = dataset.get_data_info()
     config.conv_info = dataset.get_conv_info()
-    dataset_train, dataset_test = dataset.create_default_splits(path)
-
-    trainer = Trainer(config,
+    dataset_train = dataset.create_default_splits(path,is_full =True)
+    dataset_test= dataset.create_default_splits(path,is_full =True,id_filename="id_test.txt")
+    trainer = Trainer(config,dataset,
                       dataset_train, dataset_test)
 
     log.warning("dataset: %s, learning_rate: %f",

@@ -77,12 +77,14 @@ def get_conv_info():
     return np.array([24, 24, 24, 24])
 
 
-def create_default_splits(path, is_train=True, is_shuffe = False):
-    ids = all_ids(path,is_shuffe)
+def create_default_splits(path, is_train=True, is_shuffe = False,is_full =False,id_filename='id.txt'):
+    ids = all_ids(path,is_shuffe,id_filename)
     n = len(ids)
 
     num_trains = int(n*0.8)
-
+    if (is_full ): 
+        num_trains = n
+        return  Dataset(ids[:num_trains], path, name='train', is_train=False)
     dataset_train = Dataset(ids[:num_trains], path, name='train', is_train=False)
     dataset_test = Dataset(ids[num_trains:], path, name='test', is_train=False)
     return dataset_train, dataset_test
@@ -93,9 +95,8 @@ def return_dataset(path):
     return Dataset(ids[:n], path, name='full', is_train=False)
   
 
-def all_ids(path,is_shuffe):
-    id_filename = 'id.txt'
-
+def all_ids(path,is_shuffe=True,id_filename = 'id.txt'):
+   
     id_txt = os.path.join(path, id_filename)
     try:
         with open(id_txt, 'r') as fp:
