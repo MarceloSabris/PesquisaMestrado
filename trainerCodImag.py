@@ -143,11 +143,20 @@ class Trainer(object):
         teste_log_Save = 2000
 
         for s in xrange(max_steps):
-            if ( self.train_amount_network!=0 and s != 0 and s % self.train_amount_network==0):
-                dataset_train = self.data.create_default_splits(os.path.join( self.pathDataSets,'Level'+str(s)),True,True)
-                _, self.batch_train,imgs = create_input_ops(dataset_train, self.batch_size,
+            if ( self.config.train_type!='full'):
+                if (self.config.train_type!='full_after'):
+                    if ( self.config.train_amount_network ==  s):
+                        dataset_train = self.data.create_default_splits(os.path.join(self.config.pathDataSets,self.config.train_nameDataset),True,True)
+                        _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
                                                is_training=True)
-                
+                if ( self.config.train_amount_network ==  'multiply'): 
+                        nameposition=0
+                        for steps in self.config.train_amount_network.split(','):
+                            if s== int(steps):
+                               dataset_train = self.data.create_default_splits(os.path.join( self.config.pathDataSets,self.config.train_nameDataset.split(',')[nameposition]),True,True)
+                               _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
+                                               is_training=True)
+                           
             step, accuracy, summary, loss, step_time = \
                       self.run_single_step(self.batch_train, step=s, is_train=True)
             
@@ -265,6 +274,12 @@ def check_data_path(path):
         return True
     else:
         return False
+def check_data_path(path,id):
+    if os.path.isfile(os.path.join(path, 'data.hy')) \
+           and os.path.isfile(os.path.join(path,id)):
+        return True
+    else:
+        return False
 
 
 def main():
@@ -279,19 +294,22 @@ def main():
     parser.add_argument('--learning_rate', type=float, default=2.5e-4)
     parser.add_argument('--lr_weight_decay', action='store_true', default=False)
     parser.add_argument('--train_amount_network',  type=int, default=0)
-    
+    parser.add_argument('--train_type',  type=str , default='full')
+    parser.add_argument('--train_nameDataset',  type=str , default='id')
+    parser.add_argument('--train_nameInitalDataset',  type=str , default='id')
+
     config = parser.parse_args()
 
-    path = os.path.join('./datasets', config.dataset_path)
+    path = os.path.join('./datasets', config.dataset_path  )
 
-    if check_data_path(path):
+    if check_data_path(path,config.train_nameInitalDataset):
         import sort_of_clevr as dataset
     else:
         raise ValueError(path)
 
     config.data_info = dataset.get_data_info()
     config.conv_info = dataset.get_conv_info()
-    dataset_train = dataset.create_default_splits(path,is_full =True)
+    dataset_train = dataset.create_default_splits(path,is_full =True,id_filename=config.train_nameInitalDataset)
     dataset_test= dataset.create_default_splits(path,is_full =True,id_filename="id_test.txt")
     trainer = Trainer(config,dataset,
                       dataset_train, dataset_test)

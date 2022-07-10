@@ -15,8 +15,15 @@
 
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": ["--file","Percentage_model-6000"]
-            //["--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "50","--checkpoint","C:\\teste\\model-2000" ]  
+           //gerar arquivo
+            // "args":["--file","c:\\Source\\PesquisaMestrado","--percentualtype","0:0.05,1:0.05,2:0.05,3:0.10,4:0.25,5:0.50","--fileGenerate","C:\\Source\\PesquisaMestrado\\datasets\\Sort-of-CLEVR_teste_decode-image3\\tipoCV2.txt","--quantityfile","8000"]
+            //treinar
+            //"args": [ "--model", "rn", "--batch_size", "50","--train_nameInitalDataset","TipoCV2.txt" ]      //          
+           //evaler
+           // "args":["--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "50","--checkpoint","C:\\teste\\model-2000" , "--file","Percentage_model-2000" ]
+            //lod database 
+            "args":[ "--file","Percentage_model-2000" ]
+              
         }
     ]
   }

@@ -42,7 +42,7 @@ class EvalManager(object):
    
 
     def add_batch(self, full, prediction, groundtruth):
-
+    
         # for now, store them all (as a list of minibatch chunks)
         self._ids.append(full['id'])
         self._questions.append(full['q'])
@@ -72,6 +72,8 @@ class EvalManager(object):
                 # relational
        
                 quest = question2str(q[i])
+                if int(id[i]) == 39950 : 
+                    print('oi')
                 answer = answer2str(a[i])
                 anserPred = np.zeros((len(a[i]))) 
                 anserPred[np.argmax(pred[i,:])] = 1 
@@ -130,16 +132,16 @@ class EvalManager(object):
         avg = float(correct_prediction_r+correct_prediction_nr)/(count_r+count_nr)
         log.infov("Average accuracy: {}%".format(avg*100))
         file_name = self.checkpoint_path.split("\\")[2]
-        self.GravarArquivo(file_name,self.ArrarQuestoesErradas,"questaoErradaTeste",errorQuest )
-        self.GravarArquivo(file_name,self.ArrayQuestoesCertas,"questaoCertaTeste",correctQuest)
+        self.GravarArquivo(file_name,self.ArrarQuestoesErradas,"questaoErradaTrain",errorQuest )
+        self.GravarArquivo(file_name,self.ArrayQuestoesCertas,"questaoCertaTrain",correctQuest)
        
        
 
     def GravarArquivo (self,percentageData, data_dict,fname,qtd):
       fname = fname +"_" +str(qtd) + '.json'
       print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
-      os.makedirs('Percentage_'+ str(percentageData) , exist_ok=True)
-      fname = 'Percentage_'+ str(percentageData) + "/" + fname
+      os.makedirs('Resultado//curriculo2//Percentage_'+ str(percentageData) , exist_ok=True)
+      fname = 'Resultado//curriculo2//Percentage_'+ str(percentageData) + "/" + fname
       # Create file
       with open(fname, 'w') as outfile:
         json.dump(data_dict, outfile, ensure_ascii=False, indent=4) 
@@ -211,7 +213,7 @@ class Evaler(object):
         log.info("# of examples = %d", len(self.dataset))
         length_dataset = len(self.dataset)
 
-        max_steps = int(length_dataset / self.batch_size) 
+        max_steps = int(length_dataset / self.batch_size) +1
         log.info("max_steps = %d", max_steps)
 
         coord = tf.train.Coordinator()
@@ -247,6 +249,7 @@ class Evaler(object):
             [self.global_step, self.model.accuracy, self.model.all_preds, self.model.a, self.step_op],
             feed_dict=self.model.get_feed_dict(batch_chunk)
         )
+    
 
         _end_time = time.time()
 
@@ -295,7 +298,7 @@ def main():
 
     config.data_info = dataset.get_data_info()
     config.conv_info = dataset.get_conv_info()
-    dataset_train = dataset.create_default_splits(path,is_full=True, id_filename="id_test.txt")
+    dataset_train = dataset.create_default_splits(path,is_full=True, id_filename="tipoCV2.txt")
     
    
     evaler = Evaler(config, dataset_train)
