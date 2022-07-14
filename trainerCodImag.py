@@ -7,6 +7,7 @@ from six.moves import xrange
 
 import matplotlib.pyplot as plt
 from util import log
+
 from pprint import pprint
 
 from input_ops import create_input_ops
@@ -17,7 +18,8 @@ import tensorflow as tf
 import tf_slim as slim
 import numpy
 import json
-
+import logging
+tf.get_logger().setLevel(logging.ERROR)
 class Trainer(object):
 
     @staticmethod
@@ -89,7 +91,7 @@ class Trainer(object):
       
         self.saver = tf.compat.v1.train.Saver(max_to_keep=1000)
         
-        self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
+        #self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
     
         self.train_amount_network = config.train_amount_network
         self.pathDataSets = os.path.join('./datasets', config.dataset_path)
@@ -101,7 +103,7 @@ class Trainer(object):
             is_chief=True,
             saver=None,
             summary_op=None,
-            summary_writer=self.summary_writer,
+            #summary_writer=self.summary_writer,
             save_summaries_secs=300,
             save_model_secs=self.checkpoint_secs,
             global_step=self.global_step,
@@ -141,8 +143,14 @@ class Trainer(object):
         max_steps =100000  
         output_save_step = 1000
         teste_log_Save = 2000
-
+        stepTimeTotalExecution = 0
+        _start_time_total = time.time()
+        step_time_test_Total = 0
+        totalTempoGravarArquivoLog = 0
+        TotalTempoGravaRede =0 
+       
         for s in xrange(max_steps):
+            _tempoPorRodada =  time.time()
             if ( self.config.train_type!='full'):
                 if (self.config.train_type!='full_after'):
                     if ( self.config.train_amount_network ==  s):
@@ -159,36 +167,54 @@ class Trainer(object):
                            
             step, accuracy, summary, loss, step_time = \
                       self.run_single_step(self.batch_train, step=s, is_train=True)
-            
+            stepTimeTotalExecution = step_time + stepTimeTotalExecution
                       
-            if s % teste_log_Save == 0:
+            #if s % teste_log_Save == 0:
 
                  # periodic inference
-                accuracy_test, step_time_test = \
-                    self.run_test(self.batch_test, is_train=False,QtdTest = self.QtdTest)
-                self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
-                temp=[]
-                temp.append('step:'+ str(step))
-                temp.append('teste - time' + str(step_time_test))
-                temp.append('train- time' + str(step_time))
-                temp.append('accuracy:'+ str(accuracy))
-                temp.append('accuracy_test:'+ str(accuracy_test))
-                temp.append('loss:'+ str(loss))
-                self.GravarArquivo(temp,'Logs',)
+                #accuracy_test, step_time_test = \
+                #    self.run_test(self.batch_test, is_train=False,QtdTest = self.QtdTest)
+                #step_time_test_Total = step_time_test + step_time_test_Total
+                #self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
+                #tempogravarlog = time.time()
+                #temp=[]
+                #temp.append('step:'+ str(step))
+                #temp.append('teste - time' + str(step_time_test))
+                #temp.append('train- time' + str(step_time))
+                #temp.append('accuracy:'+ str(accuracy))
+                #temp.append('accuracy_test:'+ str(accuracy_test))
+                #temp.append('loss:'+ str(loss))
+                #self.GravarArquivo(temp,'Logs',)
+               
+                #totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
 
 
-
-
-            self.summary_writer.add_summary(summary, global_step=step)         
+            #self.summary_writer.add_summary(summary, global_step=step)         
 
                   
 
             if (s % output_save_step == 0 or s == max_steps):
+                inicioTempoGravaRede = time.time()
                 log.infov("Saved checkpoint at %d", s) 
                 save_path = self.saver.save(self.session,
                                             os.path.join(self.train_dir, 'model'),
                                             global_step=step)
+                TotalTempoGravaRede = TotalTempoGravaRede + (time.time() -inicioTempoGravaRede )
+            _tempoPorRodadaFim = time.time()
+           
+        
+        
+        
         self.plot_acuracy()
+        _end_time_total = time.time()
+        log.infov('Tempo total de validacao'+ str(step_time_test_Total))
+        log.infov( 'Tempo total treinamento' + str((stepTimeTotalExecution)))
+        log.infov( 'Tempo total para gravar log' + str((totalTempoGravarArquivoLog)))
+        log.infov( 'Tempo total para gravar rede' + str((TotalTempoGravaRede)))
+        
+        log.infov( 'Tempo total' + str((_end_time_total - _start_time_total)))
+        
+       
 
     def run_single_step(self, batch, step=None, is_train=True):
         _start_time = time.time()

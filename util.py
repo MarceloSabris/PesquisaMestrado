@@ -42,3 +42,18 @@ def _infov(self, msg, *args, **kwargs):
     self.log(logging.INFO + 1, msg, *args, **kwargs)
 
 logging.Logger.infov = _infov
+
+
+import time
+from datetime import timedelta
+
+def start_time_measure(message=None):
+    if message:
+        print(message)
+    return time.monotonic()
+
+def end_time_measure(start_time, print_prefix=None):
+    end_time = time.monotonic()
+    if print_prefix:
+        print(print_prefix + str(timedelta(seconds=end_time - start_time)))
+    return end_time

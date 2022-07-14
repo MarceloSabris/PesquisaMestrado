@@ -41,6 +41,7 @@ parser.add_argument('--file', type=str, default='default')
 config = parser.parse_args()
 
 file_to_search = config.file
+file_to_search = "C:\\Source\\PesquisaMestrado\\Resultado\\curriculo2\\" + file_to_search  
 Files = [f for f in os.listdir(file_to_search) ]
 Files.sort()
 posQues =[]

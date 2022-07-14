@@ -1,0 +1,24 @@
+TensorFlow 2.0 Upgrade Script
+-----------------------------
+Converted 1 files
+Detected 0 issues that require attention
+--------------------------------------------------------------------------------
+================================================================================
+Detailed log follows:
+
+================================================================================
+--------------------------------------------------------------------------------
+Processing file 'input_ops.py'
+ outputting to 'input_ops.py'
+--------------------------------------------------------------------------------
+
+44:30: INFO: `name` passed to `name_scope`. Because you may be re-entering an existing scope, it is not safe to convert automatically,  the v2 name_scope does not support re-entering scopes by name.
+
+44:30: INFO: Renamed 'tf.name_scope' to 'tf.compat.v1.name_scope'
+45:26: INFO: Renamed 'tf.train.string_input_producer' to 'tf.compat.v1.train.string_input_producer'
+46:11: INFO: Added keywords to args of function 'tf.convert_to_tensor'
+56:76: INFO: Renamed 'tf.py_func' to 'tf.compat.v1.py_func'
+72:20: INFO: Renamed 'tf.train.shuffle_batch' to 'tf.compat.v1.train.shuffle_batch'
+80:20: INFO: Renamed 'tf.train.batch' to 'tf.compat.v1.train.batch'
+--------------------------------------------------------------------------------
+
