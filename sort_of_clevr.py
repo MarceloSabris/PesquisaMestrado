@@ -14,11 +14,12 @@ rs = np.random.RandomState(123)
 class Dataset(object):
 
     def __init__(self, ids, path, name='default',
-                 max_examples=None, is_train=True):
+                 max_examples=None, is_train=True,batchsize=50):
         self._ids = list(ids)
         self.name = name
         self.is_train = is_train
-
+        self.batch = []
+        self.batchsize = batchsize
         if max_examples is not None:
             self._ids = self._ids[:max_examples]
 
@@ -32,14 +33,22 @@ class Dataset(object):
         except:
             raise IOError('Dataset not found. Please make sure the dataset was downloaded.')
         log.info("Reading Done: %s", file)
+        self.maxGrups = int(len(self.ids) / batchsize)
+        #self.maxGrups =10
+        count = 1
+        while(count<self.maxGrups+1):
+           self.batch.append(self.get_split(count,batchsize))
+           count = count+1
 
     def get_data(self, id):
+        teste=[]
+        teste.append(1)
         # preprocessing and data augmentation
-        img = self.data[id]['image'][()]/255.
+        img =teste
         q = self.data[id]['question'][()].astype(np.float32)
         a = self.data[id]['answer'][()].astype(np.float32)
         try: 
-           imgDecod = self.data[id]['encoded'][()].astype(np.float32)   
+           imgDecod =teste
         except: 
            imgDecod = []
         try: 
@@ -50,10 +59,48 @@ class Dataset(object):
            codImagOri = self.data[id]['codImagOrig'][()].astype(np.float32)   
         except: 
            codImagOri = []
-
-           
-           
         return img, q, a, imgDecod , codImag,codImagOri
+   
+    def get_split(self, step,batchsize):
+        img=[]
+        q=[]
+        ids=[]
+        a=[]
+        imgDecod=[]
+        codImag =[]
+        codImagOri=[]
+
+        ult = batchsize*step
+        inicio = ult - batchsize  
+        if (ult > len(self._ids)): 
+            stepunicos = int(len(len(self._ids))/batchsize)
+            stepunicos = int(step/stepunicos)
+            ult = ult -  stepunicos
+            inicio = ult - batchsize 
+        while(inicio < ult):
+
+          
+            id1 = str(inicio)
+            ids.append(id1)
+            # preprocessing and data augmentation
+            img.append([1])
+            q.append(self.data[id1]['question'][()].astype(np.float32))
+            a.append(self.data[id1]['answer'][()].astype(np.float32))
+            try: 
+                imgDecod.append([1])   
+            except: 
+                imgDecod = []
+            try: 
+                codImag.append(self.data[id1]['codImag'][()].astype(np.float32))
+            except: 
+                codImag = []
+            try:                           
+                codImagOri.append(self.data[id1]['codImagOrig'][()].astype(np.float32))   
+            except: 
+                codImagOri = []
+            inicio = inicio +1 
+           
+        return   [ids,img,q, a, imgDecod , codImag,codImagOri]
 
     @property
     def ids(self):

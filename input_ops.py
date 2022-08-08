@@ -45,7 +45,7 @@ def create_input_ops(dataset,
         log.info("input_ops [%s]: Using specified %d IDs", scope, len(data_id))
 
     # single operations
-    with tf.device("/cpu:0"), tf.name_scope(scope):
+    with tf.device("/gpu:0"), tf.name_scope(scope):
         tf.compat.v1.disable_eager_execution()
         input_ops['id'] = tf.compat.v1.train.string_input_producer(
            tf.convert_to_tensor(data_id), shuffle=False, capacity=128
@@ -67,16 +67,16 @@ def create_input_ops(dataset,
         )
 
         input_ops['id'].set_shape([])
-        input_ops['img'].set_shape(list(img.shape))
+        input_ops['img'].set_shape([])
         input_ops['q'].set_shape(list(q.shape))
         input_ops['a'].set_shape(list(a.shape)) 
-        input_ops['imgDecod'].set_shape(list(imgDecod.shape)) 
+        input_ops['imgDecod'].set_shape([])
         input_ops['codImag'].set_shape(list(codImag.shape)) 
         input_ops['codImagOri'].set_shape(list(codImagOri.shape))
         
     # batchify
     capacity = 2 * batch_size * num_threads
-    min_capacity = min(int(capacity * 0.75), 1024)
+    min_capacity = min(int(capacity * 0.90), 1024)
 
     if shuffle:
         batch_ops =  tf.compat.v1.train.shuffle_batch(
@@ -94,5 +94,7 @@ def create_input_ops(dataset,
             num_threads=num_threads,
             capacity=capacity,
         )
+
+         
 
     return input_ops, batch_ops,imgs

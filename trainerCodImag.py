@@ -1,7 +1,11 @@
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+#import plaidml.keras
+import os
+#plaidml.keras.install_backend()
+
 
 from six.moves import xrange
 
@@ -11,15 +15,22 @@ from util import log
 from pprint import pprint
 
 from input_ops import create_input_ops
+#os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
-import os
+
 import time
 import tensorflow as tf
 import tf_slim as slim
 import numpy
 import json
 import logging
+from datetime import datetime
+
+
 tf.get_logger().setLevel(logging.ERROR)
+tf.debugging.set_log_device_placement(True) 
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+#tf.enable_eager_execution() 
 class Trainer(object):
 
     @staticmethod
@@ -74,7 +85,10 @@ class Trainer(object):
                 name='decaying_learning_rate'
             )
         self.QtdTest = len(dataset_test) 
+        self.dataset = dataset
+        self.dataset_test = dataset_test
         self.check_op = tf.no_op()
+        self.trainPosition = 0 
 
         self.optimizer = slim.optimize_loss(
             loss=self.model.loss,
@@ -89,13 +103,13 @@ class Trainer(object):
         #import tfplot
         self.plot_summary_op =  tf.compat.v1.summary.merge_all()
       
-        self.saver = tf.compat.v1.train.Saver(max_to_keep=1000)
+        self.saver = tf.compat.v1.train.Saver(max_to_keep=10000)
         
-        #self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
+        self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
     
         self.train_amount_network = config.train_amount_network
         self.pathDataSets = os.path.join('./datasets', config.dataset_path)
-        self.checkpoint_secs = 600  # 10 min
+        self.checkpoint_secs = 60000  # 10 min
         self.acuracy = [] 
         self.step = []
         self.supervisor = tf.compat.v1.train.Supervisor(
@@ -103,19 +117,24 @@ class Trainer(object):
             is_chief=True,
             saver=None,
             summary_op=None,
-            #summary_writer=self.summary_writer,
-            save_summaries_secs=300,
+            summary_writer=self.summary_writer,
+            save_summaries_secs=3000,
             save_model_secs=self.checkpoint_secs,
             global_step=self.global_step,
         )
+        tf.test.is_gpu_available()
+
+        #gpu_config = tf.GPUOptions()
+        #gpu_config.visible_device_list = "1"
 
         session_config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
-            # intra_op_parallelism_threads=1,
-            # inter_op_parallelism_threads=1,
+             intra_op_parallelism_threads=8,
+             inter_op_parallelism_threads=8,
             gpu_options=tf.compat.v1.GPUOptions(allow_growth=True),
-            device_count={'GPU': 1},
+            device_count={'GPU': 2},
         )
+        #self.tf_config.gpu_options.allow_growth=True
         self.session = self.supervisor.prepare_or_wait_for_session(config=session_config)
         self.session.graph._unsafe_unfinalize()
 
@@ -141,16 +160,17 @@ class Trainer(object):
         pprint(self.batch_train)
         #alterei aqui 
         max_steps =100000  
-        output_save_step = 1000
-        teste_log_Save = 2000
+                                       
+        output_save_step = 4000
+        teste_log_Save = 4000
         stepTimeTotalExecution = 0
         _start_time_total = time.time()
         step_time_test_Total = 0
         totalTempoGravarArquivoLog = 0
         TotalTempoGravaRede =0 
-       
+        _tempoPorRodada = time.time()
         for s in xrange(max_steps):
-            _tempoPorRodada =  time.time()
+             
             if ( self.config.train_type!='full'):
                 if (self.config.train_type!='full_after'):
                     if ( self.config.train_amount_network ==  s):
@@ -164,44 +184,49 @@ class Trainer(object):
                                dataset_train = self.data.create_default_splits(os.path.join( self.config.pathDataSets,self.config.train_nameDataset.split(',')[nameposition]),True,True)
                                _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
                                                is_training=True)
-                           
+          
             step, accuracy, summary, loss, step_time = \
                       self.run_single_step(self.batch_train, step=s, is_train=True)
             stepTimeTotalExecution = step_time + stepTimeTotalExecution
                       
-            #if s % teste_log_Save == 0:
+            if s % teste_log_Save == 0 :
 
                  # periodic inference
-                #accuracy_test, step_time_test = \
-                #    self.run_test(self.batch_test, is_train=False,QtdTest = self.QtdTest)
-                #step_time_test_Total = step_time_test + step_time_test_Total
-                #self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
-                #tempogravarlog = time.time()
-                #temp=[]
-                #temp.append('step:'+ str(step))
-                #temp.append('teste - time' + str(step_time_test))
-                #temp.append('train- time' + str(step_time))
-                #temp.append('accuracy:'+ str(accuracy))
-                #temp.append('accuracy_test:'+ str(accuracy_test))
-                #temp.append('loss:'+ str(loss))
-                #self.GravarArquivo(temp,'Logs',)
+                accuracy_test, step_time_test = \
+                    self.run_test()
+                step_time_test_Total = step_time_test + step_time_test_Total
+                self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
+                tempogravarlog = time.time()
+                temp=[]
+                temp.append('step:'+ str(step))
+                temp.append('teste - time' + str(step_time_test))
+                temp.append('train- time' + str(step_time))
+                temp.append('accuracy:'+ str(accuracy))
+                temp.append('accuracy_test:'+ str(accuracy_test))
+                temp.append('loss:'+ str(loss))
+                self.GravarArquivo(temp,'Logs',)
                
-                #totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
+                totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
 
 
-            #self.summary_writer.add_summary(summary, global_step=step)         
+            self.summary_writer.add_summary(summary, global_step=step)         
 
                   
 
             if (s % output_save_step == 0 or s == max_steps):
+                #log.infov( 'Tempo total rodada' + str((time.time() - _tempoPorRodada)))
+                now = datetime.now()
+
+                current_time = now.strftime("%H:%M:%S")
+
                 inicioTempoGravaRede = time.time()
-                log.infov("Saved checkpoint at %d", s) 
+                log.infov( "%s Saved checkpoint at %d",current_time,  s) 
                 save_path = self.saver.save(self.session,
                                             os.path.join(self.train_dir, 'model'),
                                             global_step=step)
                 TotalTempoGravaRede = TotalTempoGravaRede + (time.time() -inicioTempoGravaRede )
-            _tempoPorRodadaFim = time.time()
-           
+               
+          
         
         
         
@@ -218,31 +243,33 @@ class Trainer(object):
 
     def run_single_step(self, batch, step=None, is_train=True):
         _start_time = time.time()
+        #batch_chunk = self.session.run(batch)
+        treino=[]
 
-        batch_chunk = self.session.run(batch)
-
+        if (self.trainPosition > self.dataset.maxGrups -1):
+               self.trainPosition = 0
+        treino = self.dataset.batch[self.trainPosition]
         fetch = [self.global_step, self.model.accuracy, self.summary_op,
                  self.model.loss, self.check_op, self.optimizer]
-
+          #treino= tf.convert_to_tensor(treino)
         try:
-            if step is not None and (step % 100 == 0):
-                fetch += [self.plot_summary_op]
+              if step is not None and (step % 100 == 0):
+                 fetch += [self.plot_summary_op]
         except:
-            pass
+              pass
 
         fetch_values = self.session.run(
-            fetch, feed_dict=self.model.get_feed_dict(batch_chunk, step=step)
-        )
+               fetch, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6],fetch], step=step)
+            )
         [step, accuracy, summary, loss] = fetch_values[:4]
-
         try:
-            if self.plot_summary_op in fetch:
-                summary += fetch_values[-1]
+                if self.plot_summary_op in fetch:
+                    summary += fetch_values[-1]
         except:
-            pass
+                pass
 
         _end_time = time.time()
-
+        self.trainPosition = self.trainPosition + 1
         return step, accuracy, summary, loss,  (_end_time - _start_time)
 
     def GravarArquivo ( self,data_dict,fname):
@@ -256,19 +283,21 @@ class Trainer(object):
          outfile.write('\n')
          outfile.close() 
 
-    def run_test(self, batch, is_train=False, repeat_times=8,QtdTest = 1):
+    def run_test(self, is_train=False):
         _start_time = time.time()
-        qtdInterator = int(QtdTest/batch['a'].shape[0])
+        treino=[]
         accuracy_test = 0
-        for i in range(qtdInterator):
-           batch_chunk = self.session.run(batch)
-           accuracy_teste_step = self.session.run(
-            self.model.accuracy, feed_dict=self.model.get_feed_dict(batch_chunk, is_training=False))
-           accuracy_test =   accuracy_teste_step +accuracy_test
+        i =0
+        while (i < self.dataset_test.maxGrups -1):
+            treino = self.dataset.batch[i]
+            accuracy_teste_step = self.session.run(
+              self.model.accuracy, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6]], is_training=False))
+            accuracy_test =   accuracy_teste_step +accuracy_test
+            i=i+1
         
         _end_time = time.time() 
-        #tf.compat.v1.summary.scalar("loss/accuracy_test", accuracy_test)
-        return (accuracy_test/qtdInterator),(_end_time-_start_time)
+        tf.compat.v1.summary.scalar("loss/accuracy_test", accuracy_test)
+        return (accuracy_test/self.dataset_test.maxGrups),(_end_time-_start_time)
 
     def log_step_message(self, step, accuracy, accuracy_test, loss, step_time, step_time_training,is_train=True):
         self.acuracy.append(accuracy)
@@ -309,8 +338,16 @@ def check_data_path(path,id):
 
 
 def main():
-    import argparse
+    import tensorflow as tf
+    tf.test.is_gpu_available()
 
+    #gpu_config = tf.GPUOptions()
+    #gpu_config.visible_device_list = "0"
+
+    #session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_config))
+    import argparse
+    #import os
+    #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=50)
     parser.add_argument('--model', type=str, default='rn', choices=['rn', 'baseline'])

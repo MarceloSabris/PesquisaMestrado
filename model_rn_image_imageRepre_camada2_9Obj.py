@@ -32,8 +32,8 @@ class Model(object):
              
         # create placeholders for the input
         self.img = tf.compat.v1.placeholder(
-            name='img', dtype=tf.float32,
-            shape=[self.batch_size, self.img_size, self.img_size, self.c_dim],
+            name='img', dtype=tf.int16,
+            shape=[self.batch_size, 1],
         )
         self.q =  tf.compat.v1.placeholder(
             name='q', dtype=tf.float32, shape=[self.batch_size, self.q_dim],
@@ -42,8 +42,8 @@ class Model(object):
             name='a', dtype=tf.float32, shape=[self.batch_size, self.a_dim],
         )
         self.imgDecod = tf.compat.v1.placeholder(
-            name='imgDecod', dtype=tf.float32,
-            shape=[self.batch_size,4, 4, 4]
+            name='imgDecod', dtype=tf.int16,
+            shape=[self.batch_size,1]
         )
         self.codImag = tf.compat.v1.placeholder(
             name='codImag', dtype=tf.float32,
@@ -61,10 +61,10 @@ class Model(object):
 
     def get_feed_dict(self, batch_chunk, step=None, is_training=None):
         fd = {
-            self.img: batch_chunk['img'],  # [B, h, w, c]
+           # self.img: batch_chunk['img'],  # [B, h, w, c]
             self.q: batch_chunk['q'],  # [B, n]
             self.a: batch_chunk['a'],  # [B, m]
-            self.imgDecod : batch_chunk['imgDecod'],
+            #self.imgDecod : batch_chunk['imgDecod'],
             self.codImag :  batch_chunk['codImag'] ,
             self.codImagOri :  batch_chunk['codImagOri'] 
             
@@ -74,6 +74,24 @@ class Model(object):
             fd[self.is_training] = is_training
 
         return fd
+
+    def get_feed_dict2(self, batch_chunk, step=None, is_training=None):
+        fd = {
+            #self.img: batch_chunk[0],  # [B, h, w, c]
+            self.q: batch_chunk[1],  # [B, n]
+            self.a: batch_chunk[2],  # [B, m]
+            #self.imgDecod : batch_chunk[3],
+            self.codImag :  batch_chunk[4] ,
+            self.codImagOri :  batch_chunk[5] 
+            
+            
+        }
+        if is_training is not None:
+            fd[self.is_training] = is_training
+
+        return fd
+
+
 
     def build(self, is_train=True):
 
