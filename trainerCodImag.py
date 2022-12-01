@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import numpy as np
 #import plaidml.keras
 import os
 #plaidml.keras.install_backend()
 
-
+import numpy
 from six.moves import xrange
 
 import matplotlib.pyplot as plt
@@ -16,7 +16,8 @@ from pprint import pprint
 
 from input_ops import create_input_ops
 #os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
-
+from vqa_util import NUM_COLOR
+from vqa_util import visualize_iqa,question2str,answer2str
 
 import time
 import tensorflow as tf
@@ -89,7 +90,24 @@ class Trainer(object):
         self.dataset_test = dataset_test
         self.check_op = tf.no_op()
         self.trainPosition = 0 
+        self._ids = []
+        self._predictions = []
+        self._groundtruths = []
+        self._questions = [] 
+        self._answers=[]
+        self._images = [] 
+        self._predictionsTrain = []
+        self._groundtruthsTrain = []
+        self._questionsTrain = [] 
+        self._answersTrain=[]
+        self._imagesTrain = [] 
 
+        self.ArrayQuestoesCertas = [] 
+        self.ArrarQuestoesErradas =[]
+        self.check_pathSaveTrain= self.config.check_pathSaveTrain
+       
+
+        self.testAcuracy = 0 
         self.optimizer = slim.optimize_loss(
             loss=self.model.loss,
             global_step=self.global_step,
@@ -139,10 +157,20 @@ class Trainer(object):
         self.session.graph._unsafe_unfinalize()
 
         self.ckpt_path = config.checkpoint
+      
         if self.ckpt_path is not None:
             log.info("Checkpoint path: %s", self.ckpt_path)
             self.saver.restore(self.session, self.ckpt_path)
             log.info("Loaded the pretrain parameters from the provided checkpoint path")
+      
+    def add_batch (self, id,questions,ans, prediction, groundtruth):
+        # for now, store them all (as a list of minibatch chunks)
+        self._ids.append(id)
+        self._questions.append(questions)
+        self._answers.append(ans)
+        self._predictions.append(prediction)
+        self._groundtruths.append(groundtruth)
+
     
     def plot_acuracy(self):
             plt.plot(self.step,self.acuracy)
@@ -160,8 +188,8 @@ class Trainer(object):
         pprint(self.batch_train)
         #alterei aqui 
         max_steps =100000  
-                                       
-        output_save_step = 4000
+        tempogravarlog  =0                            
+        #output_save_step = 4000
         teste_log_Save = 4000
         stepTimeTotalExecution = 0
         _start_time_total = time.time()
@@ -170,53 +198,53 @@ class Trainer(object):
         TotalTempoGravaRede =0 
         _tempoPorRodada = time.time()
         for s in xrange(max_steps):
-             
+            
             if ( self.config.train_type!='full'):
-                if (self.config.train_type!='full_after'):
-                    if ( self.config.train_amount_network ==  s):
+                  if (self.config.train_type!='full_after'):
+                      if ( self.config.train_amount_network ==  s):
                         dataset_train = self.data.create_default_splits(os.path.join(self.config.pathDataSets,self.config.train_nameDataset),True,True)
                         _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
                                                is_training=True)
-                if ( self.config.train_amount_network ==  'multiply'): 
+            if ( self.config.train_amount_network ==  'multiply'): 
                         nameposition=0
                         for steps in self.config.train_amount_network.split(','):
                             if s== int(steps):
                                dataset_train = self.data.create_default_splits(os.path.join( self.config.pathDataSets,self.config.train_nameDataset.split(',')[nameposition]),True,True)
                                _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
                                                is_training=True)
-          
+            
             step, accuracy, summary, loss, step_time = \
-                      self.run_single_step(self.batch_train, step=s, is_train=True)
+                    self.run_single_step(self.batch_train, step=s,teste_log_Save= teste_log_Save, is_train=True)
             stepTimeTotalExecution = step_time + stepTimeTotalExecution
-                      
+            self.trainPosition = self.trainPosition + 1          
             if s % teste_log_Save == 0 :
 
                  # periodic inference
-                accuracy_test, step_time_test = \
-                    self.run_test()
-                step_time_test_Total = step_time_test + step_time_test_Total
-                self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
-                tempogravarlog = time.time()
-                temp=[]
-                temp.append('step:'+ str(step))
-                temp.append('teste - time' + str(step_time_test))
-                temp.append('train- time' + str(step_time))
-                temp.append('accuracy:'+ str(accuracy))
-                temp.append('accuracy_test:'+ str(accuracy_test))
-                temp.append('loss:'+ str(loss))
-                self.GravarArquivo(temp,'Logs',)
+                    accuracy_test, step_time_test = \
+                        self.run_test('Teste' ,step,self.dataset_test)
+                    step_time_test_Total = step_time_test + step_time_test_Total
+                    self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
+                    tempogravarlog = time.time()
+                    temp=[]
+                    temp.append('step:'+ str(step))
+                    temp.append('teste - time' + str(step_time_test))
+                    temp.append('train- time' + str(step_time))
+                    temp.append('accuracy:'+ str(accuracy))
+                    temp.append('accuracy_test:'+ str(accuracy_test))
+                    temp.append('loss:'+ str(loss))
+                    self.GravarArquivo1(temp,'Logs')
                
-                totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
+            totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
 
 
             self.summary_writer.add_summary(summary, global_step=step)         
 
                   
 
-            if (s % output_save_step == 0 or s == max_steps):
+            if (s % teste_log_Save == 0 or s == max_steps):
                 #log.infov( 'Tempo total rodada' + str((time.time() - _tempoPorRodada)))
                 now = datetime.now()
-
+                #self.run_test('Treino' ,step,self.dataset)
                 current_time = now.strftime("%H:%M:%S")
 
                 inicioTempoGravaRede = time.time()
@@ -241,27 +269,36 @@ class Trainer(object):
         
        
 
-    def run_single_step(self, batch, step=None, is_train=True):
+    def run_single_step(self, batch,teste_log_Save, step=None, is_train=True):
         _start_time = time.time()
+        qtd = 100
         #batch_chunk = self.session.run(batch)
         treino=[]
-
+        
+        
         if (self.trainPosition > self.dataset.maxGrups -1):
-               self.trainPosition = 0
+                self.trainPosition = 0
         treino = self.dataset.batch[self.trainPosition]
         fetch = [self.global_step, self.model.accuracy, self.summary_op,
-                 self.model.loss, self.check_op, self.optimizer]
+                         self.model.loss, self.check_op, self.optimizer,  self.model.all_preds, self.model.a]
+      
           #treino= tf.convert_to_tensor(treino)
         try:
-              if step is not None and (step % 100 == 0):
+                if step is not None and (step % 100 == 0):
                  fetch += [self.plot_summary_op]
         except:
-              pass
-
-        fetch_values = self.session.run(
-               fetch, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6],fetch], step=step)
-            )
+                 pass
+        for s in range (50):
+            fetch_values = self.session.run(
+                  fetch, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6],fetch], step=step)
+                )
+        posicao = step
         [step, accuracy, summary, loss] = fetch_values[:4]
+       
+        if posicao % teste_log_Save == 0 :
+           self.add_batch( treino[0],treino[2],treino[3] ,fetch_values[6], fetch_values[7])
+           self.report(step,'treinamento')
+           
         try:
                 if self.plot_summary_op in fetch:
                     summary += fetch_values[-1]
@@ -269,10 +306,9 @@ class Trainer(object):
                 pass
 
         _end_time = time.time()
-        self.trainPosition = self.trainPosition + 1
         return step, accuracy, summary, loss,  (_end_time - _start_time)
 
-    def GravarArquivo ( self,data_dict,fname):
+    def GravarArquivo1 ( self,data_dict,fname):
       
        print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
        os.makedirs(self.train_dir, exist_ok=True)
@@ -283,22 +319,126 @@ class Trainer(object):
          outfile.write('\n')
          outfile.close() 
 
-    def run_test(self, is_train=False):
+    def run_test(self,tipo,step ,dataset,is_train=False):
         _start_time = time.time()
         treino=[]
         accuracy_test = 0
         i =0
-        while (i < self.dataset_test.maxGrups -1):
-            treino = self.dataset.batch[i]
-            accuracy_teste_step = self.session.run(
-              self.model.accuracy, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6]], is_training=False))
+        while (i < dataset.maxGrups -1):
+            treino = dataset.batch[i]
+            [accuracy_teste_step, all_preds, all_targets]  = self.session.run(
+                [self.model.accuracy, self.model.all_preds, self.model.a], feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6]], is_training=False))
             accuracy_test =   accuracy_teste_step +accuracy_test
+            self.add_batch( treino[0],treino[2],treino[3] ,all_preds, all_targets)
             i=i+1
-        
+        self.report(step,tipo)
         _end_time = time.time() 
-        tf.compat.v1.summary.scalar("loss/accuracy_test", accuracy_test)
-        return (accuracy_test/self.dataset_test.maxGrups),(_end_time-_start_time)
+        tf.compat.v1.summary.scalar("loss/accuracy_test", (accuracy_test/i))
+        self._ids=[]
+        self._questions=[]
+        self._answers=[]
+        self._predictions=[]
+        self._groundtruths=[]
+        self.ArrarQuestoesErradas = []
+        self.ArrayQuestoesCertas =[]
+        return (accuracy_test/i),(_end_time-_start_time)
 
+
+    def report(self,step,tipo):
+
+        #img, q, a = self.dataset.get_data(self._ids[0])
+        #visualize_iqa( img, q, a)
+
+
+        # report L2 loss
+        log.info("Computing scores...")
+        correct_prediction_nr = 0
+        count_nr = 0
+        correct_prediction_r = 0
+        correctQuest =0
+        errorQuest = 0
+        count_r = 0
+        
+        
+        for id,q,a, pred, gt in zip(self._ids,self._questions, self._answers ,self._predictions, self._groundtruths):
+            for i in range(pred.shape[0]):
+                # relational
+       
+                quest = question2str(q[i])
+                #if int(id[i]) == 39950 : 
+                #    print('oi')
+                answer = answer2str(a[i])
+                anserPred = np.zeros((len(a[i]))) 
+                anserPred[np.argmax(pred[i,:])] = 1 
+                anserPred1 = answer2str(anserPred)
+                q_num = np.argmax(q[i][6:])
+                if  q_num > 2:
+                    count_r += 1
+                    
+                    if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
+                        correct_prediction_r += 1
+                        correctQuest += 1 
+                        #self.ArrayQuestoesCertas.append(str(int(id[i])))
+                        self.ArrayQuestoesCertas.append("qestao id numero : " +str(int(id[i])))
+                        self.ArrayQuestoesCertas.append(quest)
+                        self.ArrayQuestoesCertas.append(answer)
+                        self.ArrayQuestoesCertas.append(anserPred1)
+                        self.ArrayQuestoesCertas.append("qestao do tipo : " +str(q_num)) 
+                        self.ArrayQuestoesCertas.append("tipo : Relacional")
+                    else:
+                        errorQuest += 1 
+                        #self.ArrarQuestoesErradas.append(str(int(id[i])))
+                        self.ArrarQuestoesErradas.append ("qestao id numero : " + str(int(id[i])))
+                        self.ArrarQuestoesErradas.append(quest)
+                        self.ArrarQuestoesErradas.append("Reposta errada:" + anserPred1)  
+                        self.ArrarQuestoesErradas.append("Resposta certa:" + answer) 
+                        self.ArrarQuestoesErradas.append("qestao do tipo : " +str(q_num))
+                        self.ArrarQuestoesErradas.append("tipo : Relacional")
+
+                # non-relational
+                else:
+                    count_nr += 1
+                    if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
+                        correctQuest += 1 
+                        correct_prediction_nr += 1
+                        #self.ArrayQuestoesCertas.append(str(int(id[i])))
+                        self.ArrayQuestoesCertas.append("qestao id numero : " +str(int(id[i])))
+                        self.ArrayQuestoesCertas.append(quest)
+                        self.ArrayQuestoesCertas.append(answer)
+                        self.ArrayQuestoesCertas.append(anserPred1)
+                        self.ArrayQuestoesCertas.append("qestao do tipo : " +str(q_num)) 
+                        self.ArrayQuestoesCertas.append("tipo : Nao-Relacional")
+                    else:
+                        errorQuest +=1
+                        #self.ArrarQuestoesErradas.append ( str(int(id[i])))
+                        self.ArrarQuestoesErradas.append ("qestao id numero : " + str(int(id[i])))
+                        self.ArrarQuestoesErradas.append(quest)
+                        self.ArrarQuestoesErradas.append("Reposta errada:" + anserPred1)  
+                        self.ArrarQuestoesErradas.append("Resposta certa:" + answer) 
+                        self.ArrarQuestoesErradas.append("qestao do tipo : " +str(q_num)) 
+                        self.ArrarQuestoesErradas.append("tipo : Nao-Relacional")
+
+        avg_nr = float(correct_prediction_nr)/count_nr
+        log.infov("Average accuracy of non-relational questions: {}%".format(avg_nr*100))
+        avg_r = float(correct_prediction_r)/count_r
+        log.infov("Average accuracy of relational questions: {}%".format(avg_r*100))
+        avg = float(correct_prediction_r+correct_prediction_nr)/(count_r+count_nr)
+        log.infov("Average accuracy: {}%".format(avg*100))
+        file_folder = self.check_pathSaveTrain
+        self.GravarArquivo(errorQuest,self.ArrarQuestoesErradas,"questaoErrada" +tipo ,file_folder,step )
+        self.GravarArquivo(correctQuest,self.ArrayQuestoesCertas,"questaoCerta"+ tipo,file_folder,step)
+      
+       
+
+    def GravarArquivo (self,qtd, data_dict,fname, file_folder,step):
+      fname = fname +"_" +str(qtd) + '.json'
+      print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
+      os.makedirs(file_folder+'//'+'processamento'+str(step), exist_ok=True)
+      fname = file_folder+'processamento'+str(step) + "/" + fname
+      # Create file
+      with open(fname, 'w') as outfile:
+        json.dump(data_dict, outfile, ensure_ascii=False, indent=4) 
+        outfile.close()
     def log_step_message(self, step, accuracy, accuracy_test, loss, step_time, step_time_training,is_train=True):
         self.acuracy.append(accuracy)
         self.step.append(step)
@@ -360,6 +500,7 @@ def main():
     parser.add_argument('--train_type',  type=str , default='full')
     parser.add_argument('--train_nameDataset',  type=str , default='id')
     parser.add_argument('--train_nameInitalDataset',  type=str , default='id')
+    parser.add_argument('--check_pathSaveTrain', type=str , default='id')
 
     config = parser.parse_args()
 
@@ -374,6 +515,8 @@ def main():
     config.conv_info = dataset.get_conv_info()
     dataset_train = dataset.create_default_splits(path,is_full =True,id_filename=config.train_nameInitalDataset)
     dataset_test= dataset.create_default_splits(path,is_full =True,id_filename="id_test.txt")
+
+
     trainer = Trainer(config,dataset,
                       dataset_train, dataset_test)
 

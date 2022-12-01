@@ -14,7 +14,7 @@ rs = np.random.RandomState(123)
 class Dataset(object):
 
     def __init__(self, ids, path, name='default',
-                 max_examples=None, is_train=True,batchsize=50):
+                 max_examples=None, is_train=True,batchsize=100):
         self._ids = list(ids)
         self.name = name
         self.is_train = is_train

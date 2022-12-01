@@ -16,9 +16,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
            //gerar arquivo
-            // "args":["--file","c:\\Source\\PesquisaMestrado","--percentualtype","0:0.05,1:0.05,2:0.05,3:0.10,4:0.25,5:0.50","--fileGenerate","C:\\Source\\PesquisaMestrado\\datasets\\Sort-of-CLEVR_teste_decode-image3\\tipoCV2.txt","--quantityfile","8000"]
+           // "args":["--file","c:\\Source\\PesquisaMestrado","--percentualtype","0:0.20,1:0.20,2:0.20,3:0.20,4:0.20","--fileGenerate","C:\\Source\\PesquisaMestrado\\datasets\\Sort-of-CLEVR_teste_decode-image4\\conhecimento.txt","--quantityfile","40000"]
             //treinar
-            "args": [ "--model", "rn", "--batch_size", "100","--train_nameInitalDataset","id_treinamento.txt" ]      //          
+             "args": [ "--model", "rn", "--batch_size", "100","--train_nameInitalDataset","conhecimento.txt","--check_pathSaveTrain","c:\\train_result_dinamico\\" ]      //          
            //evaler
            // "args":["--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "50","--checkpoint","C:\\teste\\model-2000" , "--file","Percentage_model-2000" ]
             //lod database 

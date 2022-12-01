@@ -1,23 +1,23 @@
 
 import numpy as np
-import pandas as pd   
+#import pandas as pd   
 import os
 from pathlib import Path
 import glob
 import json
 import array as arr
 import os
-import nltk
+#import nltk
 import argparse
-import cv2
+#import cv2
 import matplotlib.pyplot as plt
 import random
 
 
 from os.path import isfile, join
-from sqlalchemy import create_engine
+#from sqlalchemy import create_engine
 
-from sqlalchemy import create_engine
+#from sqlalchemy import create_engine
 parser = argparse.ArgumentParser()
 parser.add_argument('--file', type=str, default='default')
 parser.add_argument('--percentualtype', type=str, default='default')
@@ -36,6 +36,7 @@ trainList=[]
 memorys = []
 resultpredication = []
 Files.sort()
+qtdbatch=60
 for File in Files:
             
             if '.json' in File:
@@ -59,7 +60,7 @@ for File in Files:
                 with open(file_to_search + '\\' + File) as f:
                             fresultpredication = json.load(f)
                             s=0
-                            QtdTipo = {"0": 0, "1": 0,"2":0,"3":0,"4":0,"5":0}
+                            QtdTipo = {"0": 0, "1": 0,"2":0,"3":0,"4":0}
                             Questoes=[[],[],[],[],[],[]]
                             Arquivo=[[],[],[],[],[],[]]
                             id1 =0 
@@ -78,6 +79,7 @@ for File in Files:
                                    print("Erro - quantity")
                             
                             valores = config.percentualtype.split(',')
+                            
                             if len(valores)>0 : 
                                    for i in valores :     
                                     if (int(config.quantityfile) > 0 ):
@@ -91,10 +93,62 @@ for File in Files:
                                     Arquivo[int(i[0])] =  Questoes[int(i.split(':')[0])][0: quantity] 
                             
                             id_file = open(config.fileGenerate, 'w')
-                            for valor in Arquivo:
-                              if len(valor)> 0: 
-                                  for item in valor:
-                                      id_file.write(str(item)+'\n')
+                            i = 0
+                            ids=[]
+                            geraaleatorio = False
+                            primeirofacio = False 
+                            primeirodifico = False 
+                            ordemconhecimento = True
+                            k=0
+                            if (geraaleatorio) :
+                                for valor in Arquivo:
+                                 if(i < len(valor)):
+                                    i = len(valor) 
+                                 for j in range(i):
+                                    if len(valor)> j: 
+                                        ids[k]=str(valor[j])
+                                        k=k+1
+                                random.shuffle(ids)
+                                for arq in range(ids):
+                                    id_file.write(str(arq)+'\n')
+                            elif (ordemconhecimento) : 
+                                for valor in Arquivo:
+                                 for j in range(len(valor)):
+                                    if len(valor)> j: 
+                                        id_file.write(str(valor[j])+'\n')
+                            elif (primeirodifico): 
+                                for valor in Arquivo:
+                                 if(i < len(valor)):
+                                    i = len(valor) 
+                                for j in range(i):
+                                    if len(Arquivo[3])> j: 
+                                        id_file.write(str(Arquivo[3][j])+'\n')
+                                    if len(Arquivo[4])> j: 
+                                        id_file.write(str(Arquivo[4][j])+'\n')
+                                for j in range(i):
+                                    if len(Arquivo[0])> j: 
+                                        id_file.write(str(Arquivo[0][j])+'\n')
+                                    if len(Arquivo[1])> j: 
+                                        id_file.write(str(Arquivo[1][j])+'\n')
+                                    if len(Arquivo[2])> j: 
+                                        id_file.write(str(Arquivo[1][j])+'\n')
+                            elif (primeirofacio): 
+                                for valor in Arquivo:
+                                 if(i < len(valor)):
+                                    i = len(valor) 
+                                for j in range(i):
+                                    if len(Arquivo[0])> j: 
+                                        id_file.write(str(Arquivo[0][j])+'\n')
+                                    if len(Arquivo[1])> j: 
+                                        id_file.write(str(Arquivo[1][j])+'\n')
+                                    if len(Arquivo[2])> j: 
+                                        id_file.write(str(Arquivo[2][j])+'\n')
+                                for j in range(i):
+                                    if len(Arquivo[3])> j: 
+                                        id_file.write(str(Arquivo[3][j])+'\n')
+                                    if len(Arquivo[4])> j: 
+                                        id_file.write(str(Arquivo[4][j])+'\n')
+
                             id_file.close()         
                             
                             '''arquivo = folder.replace('.','_')
