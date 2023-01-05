@@ -95,10 +95,10 @@ for File in Files:
                             id_file = open(config.fileGenerate, 'w')
                             i = 0
                             ids=[]
-                            geraaleatorio = False
+                            geraaleatorio = True
                             primeirofacio = False 
                             primeirodifico = False 
-                            ordemconhecimento = True
+                            ordemconhecimento = False
                             k=0
                             if (geraaleatorio) :
                                 for valor in Arquivo:
@@ -106,11 +106,11 @@ for File in Files:
                                     i = len(valor) 
                                  for j in range(i):
                                     if len(valor)> j: 
-                                        ids[k]=str(valor[j])
+                                        ids.append(valor[j])
                                         k=k+1
                                 random.shuffle(ids)
-                                for arq in range(ids):
-                                    id_file.write(str(arq)+'\n')
+                                for dado in ids:
+                                    id_file.write(str(dado)+'\n')
                             elif (ordemconhecimento) : 
                                 for valor in Arquivo:
                                  for j in range(len(valor)):
@@ -125,13 +125,13 @@ for File in Files:
                                         id_file.write(str(Arquivo[3][j])+'\n')
                                     if len(Arquivo[4])> j: 
                                         id_file.write(str(Arquivo[4][j])+'\n')
-                                for j in range(i):
+                                for cont2 in range(i):
                                     if len(Arquivo[0])> j: 
-                                        id_file.write(str(Arquivo[0][j])+'\n')
+                                        id_file.write(str(Arquivo[0][cont2])+'\n')
                                     if len(Arquivo[1])> j: 
-                                        id_file.write(str(Arquivo[1][j])+'\n')
+                                        id_file.write(str(Arquivo[1][cont2])+'\n')
                                     if len(Arquivo[2])> j: 
-                                        id_file.write(str(Arquivo[1][j])+'\n')
+                                        id_file.write(str(Arquivo[2][cont2])+'\n')
                             elif (primeirofacio): 
                                 for valor in Arquivo:
                                  if(i < len(valor)):
@@ -143,11 +143,11 @@ for File in Files:
                                         id_file.write(str(Arquivo[1][j])+'\n')
                                     if len(Arquivo[2])> j: 
                                         id_file.write(str(Arquivo[2][j])+'\n')
-                                for j in range(i):
+                                for cont2 in range(i):
                                     if len(Arquivo[3])> j: 
-                                        id_file.write(str(Arquivo[3][j])+'\n')
+                                        id_file.write(str(Arquivo[3][cont2])+'\n')
                                     if len(Arquivo[4])> j: 
-                                        id_file.write(str(Arquivo[4][j])+'\n')
+                                        id_file.write(str(Arquivo[4][cont2])+'\n')
 
                             id_file.close()         
                             

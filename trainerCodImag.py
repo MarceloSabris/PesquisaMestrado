@@ -187,11 +187,11 @@ class Trainer(object):
         log.infov("Training Starts!")
         pprint(self.batch_train)
         #alterei aqui 
-        max_steps =100000  
+        max_steps =1000  
         tempogravarlog  =0                            
         #output_save_step = 4000
-        teste_log_Save = 4000
-        stepTimeTotalExecution = 0
+        teste_log_Save = 40
+        stepTimeTotalExecution = 0  
         _start_time_total = time.time()
         step_time_test_Total = 0
         totalTempoGravarArquivoLog = 0
@@ -288,7 +288,7 @@ class Trainer(object):
                  fetch += [self.plot_summary_op]
         except:
                  pass
-        for s in range (50):
+        for s in range (100):
             fetch_values = self.session.run(
                   fetch, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6],fetch], step=step)
                 )

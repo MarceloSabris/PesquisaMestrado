@@ -1,3 +1,3 @@
-C:\Users\DELL\anaconda3\envs\tfdml_plugin\python.exe trainerCodImag.py --model "rn" --batch_size "100" --train_nameInitalDataset "conhecimento.txt" --check_pathSaveTrain "c:\train_result_dinamico\\"
-C:\Users\DELL\anaconda3\envs\tfdml_plugin\python.exe trainerCodImag.py --model "rn" --batch_size "100" --train_nameInitalDataset "conhecimento.txt" --check_pathSaveTrain "c:\train_result_dinamico\\"
-C:\Users\DELL\anaconda3\envs\tfdml_plugin\python.exe trainerCodImag.py --model "rn" --batch_size "100" --train_nameInitalDataset "conhecimento.txt" --check_pathSaveTrain "c:\train_result_dinamico\\"
+C:\Users\DELL\anaconda3\envs\tfdml_plugin\python.exe trainerCodImag.py --model "rn" --batch_size "100" --train_nameInitalDataset "socomplexa.txt" --check_pathSaveTrain "c:\train_result_dinamico\\"
+C:\Users\DELL\anaconda3\envs\tfdml_plugin\python.exe trainerCodImag.py --model "rn" --batch_size "100" --train_nameInitalDataset "socomplexa.txt" --check_pathSaveTrain "c:\train_result_dinamico\\"
+C:\Users\DELL\anaconda3\envs\tfdml_plugin\python.exe trainerCodImag.py --model "rn" --batch_size "100" --train_nameInitalDataset "socomplexa.txt" --check_pathSaveTrain "c:\train_result_dinamico\\"
