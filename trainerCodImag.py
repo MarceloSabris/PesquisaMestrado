@@ -47,22 +47,23 @@ class Trainer(object):
                  dataset_test):
         self.config = config
         hyper_parameter_str = config.dataset_path+'_lr_'+str(config.learning_rate)
-        self.train_dir = './train_dir/%s-%s-%s-%s' % (
-            config.model,
-            config.prefix,
-            hyper_parameter_str,
-            time.strftime("%Y%m%d-%H%M%S")
-        )
+        #self.train_dir = './train_dir/%s-%s-%s-%s' % (
+        #    config.model,
+        #    config.prefix,
+        #    hyper_parameter_str,
+        #    time.strftime("%Y%m%d-%H%M%S")
+        #)
+        self.train_dir = './train_dir/%s' % (config.train_dir)
 
         if not os.path.exists(self.train_dir):
             os.makedirs(self.train_dir)
         log.infov("Train Dir: %s", self.train_dir)
-
+        
         # --- input ops ---
         self.batch_size = config.batch_size
         self.data = data
         
-        _, self.batch_train,imgs = create_input_ops(dataset, self.batch_size,shuffle=False,
+        _, self.batch_train,imgs = create_input_ops(dataset[0], self.batch_size,shuffle=False,
                                                is_training=True)
 
         _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,shuffle=False,                                          
@@ -86,7 +87,8 @@ class Trainer(object):
                 name='decaying_learning_rate'
             )
         self.QtdTest = len(dataset_test) 
-        self.dataset = dataset
+        self.dataset = dataset[0]
+        self.datasets = dataset
         self.dataset_test = dataset_test
         self.check_op = tf.no_op()
         self.trainPosition = 0 
@@ -187,37 +189,63 @@ class Trainer(object):
         log.infov("Training Starts!")
         pprint(self.batch_train)
         #alterei aqui 
-        max_steps =1000  
+        max_steps_datasets =95000
+        max_step_dataset = 10
         tempogravarlog  =0                            
         #output_save_step = 4000
-        teste_log_Save = 40
+        teste_log_Save = 1500
         stepTimeTotalExecution = 0  
         _start_time_total = time.time()
         step_time_test_Total = 0
         totalTempoGravarArquivoLog = 0
         TotalTempoGravaRede =0 
         _tempoPorRodada = time.time()
-        for s in xrange(max_steps):
-            
-            if ( self.config.train_type!='full'):
-                  if (self.config.train_type!='full_after'):
-                      if ( self.config.train_amount_network ==  s):
-                        dataset_train = self.data.create_default_splits(os.path.join(self.config.pathDataSets,self.config.train_nameDataset),True,True)
-                        _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
+        #if ( self.config.train_type!='full'):
+            #      if (self.config.train_type!='full_after'):
+            #          if ( self.config.train_amount_network ==  s):
+            #            dataset_train = self.data.create_default_splits(os.path.join(self.config.pathDataSets,self.config.train_nameDataset),True,True)
+            #            _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
+            #                                   is_training=True)
+            #if ( self.config.train_amount_network ==  'multiply'): 
+            #            nameposition=0
+            #            for steps in self.config.train_amount_network.split(','):
+            #                if s== int(steps):
+            #                   dataset_train = self.data.create_default_splits(os.path.join( self.config.pathDataSets,self.config.train_nameDataset.split(',')[nameposition]),True,True)
+            #                   _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
+            #                                   is_training=True)
+        stepControl = 0   
+        accuracy_test= 0.0
+         
+        #while (stepControl < max_steps_datasets):
+        #stepControl < max_steps_datasets and
+        while stepControl < max_steps_datasets and  accuracy_test < 0.95 : 
+          datasetcont = 0
+          for dataset in  self.datasets :
+            accuracy = 0.00
+            accuracy_total = 0.001
+            datasetcont = datasetcont+1
+            self.dataset = dataset
+            _, self.batch_train,imgs = create_input_ops(dataset, self.config.batch_size,
                                                is_training=True)
-            if ( self.config.train_amount_network ==  'multiply'): 
-                        nameposition=0
-                        for steps in self.config.train_amount_network.split(','):
-                            if s== int(steps):
-                               dataset_train = self.data.create_default_splits(os.path.join( self.config.pathDataSets,self.config.train_nameDataset.split(',')[nameposition]),True,True)
-                               _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
-                                               is_training=True)
-            
-            step, accuracy, summary, loss, step_time = \
-                    self.run_single_step(self.batch_train, step=s,teste_log_Save= teste_log_Save, is_train=True)
-            stepTimeTotalExecution = step_time + stepTimeTotalExecution
-            self.trainPosition = self.trainPosition + 1          
-            if s % teste_log_Save == 0 :
+            self.trainPosition =0
+            s=1
+            log.info("mudou o database")
+            while (accuracy_total/(s+1)) < 0.98 :
+            #  log.infov(accuracy_total/(s+1))
+            #  accuracy_total = 0.001
+            #for z in xrange(max_step_dataset):
+              log.infov(accuracy_total/(s+1))
+              accuracy_total = 0.001
+              for s in xrange(dataset.maxGrups -1):
+                
+                #log.infov(s)
+                accuracy_total = accuracy +accuracy_total
+                step, accuracy, summary, loss, step_time = \
+                    self.run_single_step(self.batch_train, step=stepControl,teste_log_Save= teste_log_Save, is_train=True)
+                stepTimeTotalExecution = step_time + stepTimeTotalExecution
+                self.trainPosition = self.trainPosition + 1      
+                stepControl = stepControl+1    
+                if stepControl % teste_log_Save == 0 :
 
                  # periodic inference
                     accuracy_test, step_time_test = \
@@ -229,43 +257,35 @@ class Trainer(object):
                     temp.append('step:'+ str(step))
                     temp.append('teste - time' + str(step_time_test))
                     temp.append('train- time' + str(step_time))
-                    temp.append('accuracy:'+ str(accuracy))
+                    temp.append('accuracy:'+ str((accuracy_total/(s+1))))
                     temp.append('accuracy_test:'+ str(accuracy_test))
                     temp.append('loss:'+ str(loss))
+                    temp.append('dataset'+str(datasetcont))
                     self.GravarArquivo1(temp,'Logs')
                
-            totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
+                    totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
 
 
-            self.summary_writer.add_summary(summary, global_step=step)         
+                    self.summary_writer.add_summary(summary, global_step=stepControl)         
 
-                  
-
-            if (s % teste_log_Save == 0 or s == max_steps):
                 #log.infov( 'Tempo total rodada' + str((time.time() - _tempoPorRodada)))
-                now = datetime.now()
+                    now = datetime.now()
                 #self.run_test('Treino' ,step,self.dataset)
-                current_time = now.strftime("%H:%M:%S")
+                    current_time = now.strftime("%H:%M:%S")
 
-                inicioTempoGravaRede = time.time()
-                log.infov( "%s Saved checkpoint at %d",current_time,  s) 
-                save_path = self.saver.save(self.session,
+                    inicioTempoGravaRede = time.time()
+                    log.infov( "%s Saved checkpoint at %d",stepControl,  s) 
+                    save_path = self.saver.save(self.session,
                                             os.path.join(self.train_dir, 'model'),
                                             global_step=step)
-                TotalTempoGravaRede = TotalTempoGravaRede + (time.time() -inicioTempoGravaRede )
-               
-          
-        
-        
-        
+                    TotalTempoGravaRede = TotalTempoGravaRede + (time.time() -inicioTempoGravaRede )
         self.plot_acuracy()
         _end_time_total = time.time()
-        log.infov('Tempo total de validacao'+ str(step_time_test_Total))
-        log.infov( 'Tempo total treinamento' + str((stepTimeTotalExecution)))
-        log.infov( 'Tempo total para gravar log' + str((totalTempoGravarArquivoLog)))
-        log.infov( 'Tempo total para gravar rede' + str((TotalTempoGravaRede)))
-        
-        log.infov( 'Tempo total' + str((_end_time_total - _start_time_total)))
+        log.info('Tempo total de validacao'+ str(step_time_test_Total))
+        log.info( 'Tempo total treinamento' + str((stepTimeTotalExecution)))
+        log.info( 'Tempo total para gravar log' + str((totalTempoGravarArquivoLog)))
+        log.info( 'Tempo total para gravar rede' + str((TotalTempoGravaRede)))
+        log.info( 'Tempo total' + str((_end_time_total - _start_time_total)))
         
        
 
@@ -274,22 +294,24 @@ class Trainer(object):
         qtd = 100
         #batch_chunk = self.session.run(batch)
         treino=[]
+        dataset = 0
+
         
         
         if (self.trainPosition > self.dataset.maxGrups -1):
-                self.trainPosition = 0
+            self.trainPosition = 0
         treino = self.dataset.batch[self.trainPosition]
         fetch = [self.global_step, self.model.accuracy, self.summary_op,
                          self.model.loss, self.check_op, self.optimizer,  self.model.all_preds, self.model.a]
       
           #treino= tf.convert_to_tensor(treino)
         try:
-                if step is not None and (step % 100 == 0):
+               if step is not None and (step % 100 == 0):
                  fetch += [self.plot_summary_op]
         except:
-                 pass
-        for s in range (100):
-            fetch_values = self.session.run(
+               pass
+       
+        fetch_values = self.session.run(
                   fetch, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6],fetch], step=step)
                 )
         posicao = step
@@ -329,18 +351,18 @@ class Trainer(object):
             [accuracy_teste_step, all_preds, all_targets]  = self.session.run(
                 [self.model.accuracy, self.model.all_preds, self.model.a], feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6]], is_training=False))
             accuracy_test =   accuracy_teste_step +accuracy_test
-            self.add_batch( treino[0],treino[2],treino[3] ,all_preds, all_targets)
+            #self.add_batch( treino[0],treino[2],treino[3] ,all_preds, all_targets)
             i=i+1
         self.report(step,tipo)
         _end_time = time.time() 
         tf.compat.v1.summary.scalar("loss/accuracy_test", (accuracy_test/i))
-        self._ids=[]
-        self._questions=[]
-        self._answers=[]
-        self._predictions=[]
-        self._groundtruths=[]
-        self.ArrarQuestoesErradas = []
-        self.ArrayQuestoesCertas =[]
+        #self._ids=[]
+        #self._questions=[]
+        #self._answers=[]
+        #self._predictions=[]
+        #self._groundtruths=[]
+        #self.ArrarQuestoesErradas = []
+        #self.ArrayQuestoesCertas =[]
         return (accuracy_test/i),(_end_time-_start_time)
 
 
@@ -419,14 +441,14 @@ class Trainer(object):
                         self.ArrarQuestoesErradas.append("tipo : Nao-Relacional")
 
         avg_nr = float(correct_prediction_nr)/count_nr
-        log.infov("Average accuracy of non-relational questions: {}%".format(avg_nr*100))
+        log.info("Average accuracy of non-relational questions: {}%".format(avg_nr*100))
         avg_r = float(correct_prediction_r)/count_r
-        log.infov("Average accuracy of relational questions: {}%".format(avg_r*100))
+        log.info("Average accuracy of relational questions: {}%".format(avg_r*100))
         avg = float(correct_prediction_r+correct_prediction_nr)/(count_r+count_nr)
-        log.infov("Average accuracy: {}%".format(avg*100))
+        log.info("Average accuracy: {}%".format(avg*100))
         file_folder = self.check_pathSaveTrain
-        self.GravarArquivo(errorQuest,self.ArrarQuestoesErradas,"questaoErrada" +tipo ,file_folder,step )
-        self.GravarArquivo(correctQuest,self.ArrayQuestoesCertas,"questaoCerta"+ tipo,file_folder,step)
+        #self.GravarArquivo(errorQuest,self.ArrarQuestoesErradas,"questaoErrada" +tipo ,file_folder,step )
+        #self.GravarArquivo(correctQuest,self.ArrayQuestoesCertas,"questaoCerta"+ tipo,file_folder,step)
       
        
 
@@ -501,20 +523,29 @@ def main():
     parser.add_argument('--train_nameDataset',  type=str , default='id')
     parser.add_argument('--train_nameInitalDataset',  type=str , default='id')
     parser.add_argument('--check_pathSaveTrain', type=str , default='id')
+    parser.add_argument('--train_dir', type=str , default='padrao')
 
     config = parser.parse_args()
 
     path = os.path.join('./datasets', config.dataset_path  )
-
-    if check_data_path(path,config.train_nameInitalDataset):
+    adress = config.train_nameInitalDataset.split(',')
+    if check_data_path(path,adress[0]):
         import sort_of_clevr as dataset
     else:
         raise ValueError(path)
 
     config.data_info = dataset.get_data_info()
     config.conv_info = dataset.get_conv_info()
-    dataset_train = dataset.create_default_splits(path,is_full =True,id_filename=config.train_nameInitalDataset)
+   
+   
+    dataset_train = []
+    for i in adress:
+        dataset_train.append(dataset.create_default_splits(path,is_full =True,id_filename=i))
+       
+    
     dataset_test= dataset.create_default_splits(path,is_full =True,id_filename="id_test.txt")
+
+    
 
 
     trainer = Trainer(config,dataset,

@@ -58,7 +58,14 @@ def create_input_ops(dataset,
         def load_fn(id):
             # image [n, n], q: [m], a: [l]
             img, q, a, imgDecod , codImag,codImagOri  = dataset.get_data(id)
-            return (id, img.astype(np.float32), q.astype(np.float32), a.astype(np.float32),imgDecod.astype(np.float32),   codImag.astype(np.float32)  ,codImagOri.astype(np.float32))
+            print(id)
+            #print(img.astype(np.float32))
+            print(q.astype(np.float32))
+            print(a.astype(np.float32))
+            #print(imgDecod.astype(np.float32))
+            #print( codImag.astype(np.float32))
+            print(codImagOri.astype(np.float32))
+            return (id, img, q.astype(np.float32), a.astype(np.float32),imgDecod,   codImag  ,codImagOri.astype(np.float32))
 
         input_ops['id'], input_ops['img'], input_ops['q'], input_ops['a'],input_ops['imgDecod'],input_ops['codImag'],input_ops['codImagOri']   = tf.compat.v1.py_func(
             load_fn, inp=[input_ops['id']],

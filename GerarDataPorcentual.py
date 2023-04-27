@@ -12,6 +12,7 @@ import argparse
 #import cv2
 import matplotlib.pyplot as plt
 import random
+#import sort_of_clever
 
 
 from os.path import isfile, join
@@ -95,10 +96,11 @@ for File in Files:
                             id_file = open(config.fileGenerate, 'w')
                             i = 0
                             ids=[]
-                            geraaleatorio = True
+                            geraaleatorio = False
                             primeirofacio = False 
                             primeirodifico = False 
-                            ordemconhecimento = False
+                            ordemconhecimento = True
+                            
                             k=0
                             if (geraaleatorio) :
                                 for valor in Arquivo:
