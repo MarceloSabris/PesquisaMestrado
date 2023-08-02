@@ -26,7 +26,8 @@ import numpy
 import json
 import logging
 from datetime import datetime
-
+import random
+import DataBase as Postgree
 
 tf.get_logger().setLevel(logging.ERROR)
 tf.debugging.set_log_device_placement(True) 
@@ -64,10 +65,10 @@ class Trainer(object):
         self.data = data
         
         _, self.batch_train,imgs = create_input_ops(dataset[0], self.batch_size,shuffle=False,
-                                               is_training=True)
+                                               is_training=True,is_loadImage= self.config.is_loadImage)
 
         _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,shuffle=False,                                          
-                                              is_training=False)
+                                              is_training=False,is_loadImage= self.config.is_loadImage)
         self.DataSetPath = os.path.join('./datasets', config.dataset_path)
         # --- create model ---
         Model = self.get_model_class(config.model)
@@ -103,10 +104,12 @@ class Trainer(object):
         self._questionsTrain = [] 
         self._answersTrain=[]
         self._imagesTrain = [] 
-
+        
         self.ArrayQuestoesCertas = [] 
         self.ArrarQuestoesErradas =[]
         self.check_pathSaveTrain= self.config.check_pathSaveTrain
+        self.ArrayTotalQuestoesCertas =[0,0,0,0,0]
+        self.ArrayTotalQuestoesErradas =[0,0,0,0,0]
        
 
         self.testAcuracy = 0 
@@ -187,10 +190,10 @@ class Trainer(object):
 
     def train(self):
         log.infov("Training Starts!")
-        pprint(self.batch_train)
+      
         #alterei aqui 
-        max_steps_datasets =95000
-        max_step_dataset = 10
+        max_steps_datasets =100000
+        max_step_dataset = 50000
         tempogravarlog  =0                            
         #output_save_step = 4000
         teste_log_Save = 1500
@@ -215,54 +218,57 @@ class Trainer(object):
             #                                   is_training=True)
         stepControl = 0   
         accuracy_test= 0.0
-         
-        #while (stepControl < max_steps_datasets):
-        #stepControl < max_steps_datasets and
-        while stepControl < max_steps_datasets and  accuracy_test < 0.95 : 
-          datasetcont = 0
-          for dataset in  self.datasets :
+       
+        while stepControl < max_steps_datasets  : 
+          datasetcont = -1
+          for cont in self.config.orderDataset.split(',') :
             accuracy = 0.00
-            accuracy_total = 0.001
+            #accuracy_total = 0.001
             datasetcont = datasetcont+1
-            self.dataset = dataset
-            _, self.batch_train,imgs = create_input_ops(dataset, self.config.batch_size,
-                                               is_training=True)
+            self.dataset = self.datasets[int(cont)]
+            dataset = self.datasets[int(cont)]
+            _, batch_train,imgs = create_input_ops(self.datasets[int(cont)], self.config.batch_size,
+                                               is_training=True,is_loadImage=self.config.is_loadImage)
             self.trainPosition =0
             s=1
+            stepdataset = 0
             log.info("mudou o database")
-            while (accuracy_total/(s+1)) < 0.98 :
-            #  log.infov(accuracy_total/(s+1))
-            #  accuracy_total = 0.001
-            #for z in xrange(max_step_dataset):
-              log.infov(accuracy_total/(s+1))
-              accuracy_total = 0.001
+            while stepdataset < int(self.config.StepChangeGroup.split(',')[int(cont)] )  :
               for s in xrange(dataset.maxGrups -1):
-                
+                if stepdataset > int(self.config.StepChangeGroup.split(',')[int(cont)] ) : 
+                    break
+                stepdataset =stepdataset+1
                 #log.infov(s)
-                accuracy_total = accuracy +accuracy_total
+                
                 step, accuracy, summary, loss, step_time = \
-                    self.run_single_step(self.batch_train, step=stepControl,teste_log_Save= teste_log_Save, is_train=True)
+                    self.run_single_step(batch_train, step=stepControl,teste_log_Save= teste_log_Save, is_train=True)
                 stepTimeTotalExecution = step_time + stepTimeTotalExecution
+                #accuracy_total = accuracy +accuracy_total
                 self.trainPosition = self.trainPosition + 1      
                 stepControl = stepControl+1    
                 if stepControl % teste_log_Save == 0 :
 
                  # periodic inference
-                    accuracy_test, step_time_test = \
+                    accuracy_test, step_time_test,questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4 = \
                         self.run_test('Teste' ,step,self.dataset_test)
                     step_time_test_Total = step_time_test + step_time_test_Total
                     self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
                     tempogravarlog = time.time()
                     temp=[]
                     temp.append('step:'+ str(step))
-                    temp.append('teste - time' + str(step_time_test))
-                    temp.append('train- time' + str(step_time))
-                    temp.append('accuracy:'+ str((accuracy_total/(s+1))))
+                    temp.append('teste - time:' + str(step_time_test))
+                    temp.append('train- time:' + str(step_time))
+                    temp.append('accuracy:'+ str(accuracy))
                     temp.append('accuracy_test:'+ str(accuracy_test))
                     temp.append('loss:'+ str(loss))
-                    temp.append('dataset'+str(datasetcont))
+                    temp.append('dataset:'+str(datasetcont))
+                    temp.append('questaotipo0:'+str(questaotipo0))
+                    temp.append('questaotipo1:'+str(questaotipo1))
+                    temp.append('questaotipo2:'+str(questaotipo2))
+                    temp.append('questaotipo3:'+str(questaotipo3))
+                    temp.append('questaotipo4:'+str(questaotipo4))            
                     self.GravarArquivo1(temp,'Logs')
-               
+                    Postgree.add_new_row(step,self.config.train_dir ,accuracy,accuracy_test,questaotipo0,questaotipo1, questaotipo2,questaotipo3,questaotipo4,self.config.GrupDataset.split('|')[int(cont)] )
                     totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
 
 
@@ -279,6 +285,13 @@ class Trainer(object):
                                             os.path.join(self.train_dir, 'model'),
                                             global_step=step)
                     TotalTempoGravaRede = TotalTempoGravaRede + (time.time() -inicioTempoGravaRede )
+                if stepdataset % 5000 == 0: 
+                 
+                 self.data.updateIdsDataSet( os.path.join('./datasets', self.config.dataset_path  ), self.datasets[int(cont)], grupoDatasets= self.config.GrupDataset.split('|')[int(cont)])
+              
+                 dataset = self.datasets[int(cont)]
+                 _, self.batch_train,imgs = create_input_ops(dataset, self.config.batch_size,
+                                               is_training=True,is_loadImage=self.config.is_loadImage)
         self.plot_acuracy()
         _end_time_total = time.time()
         log.info('Tempo total de validacao'+ str(step_time_test_Total))
@@ -317,9 +330,9 @@ class Trainer(object):
         posicao = step
         [step, accuracy, summary, loss] = fetch_values[:4]
        
-        if posicao % teste_log_Save == 0 :
-           self.add_batch( treino[0],treino[2],treino[3] ,fetch_values[6], fetch_values[7])
-           self.report(step,'treinamento')
+        #if posicao % teste_log_Save == 0 :
+        #   self.add_batch( treino[0],treino[2],treino[3] ,fetch_values[6], fetch_values[7])
+        #   self.report(step,'treinamento')
            
         try:
                 if self.plot_summary_op in fetch:
@@ -351,19 +364,29 @@ class Trainer(object):
             [accuracy_teste_step, all_preds, all_targets]  = self.session.run(
                 [self.model.accuracy, self.model.all_preds, self.model.a], feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6]], is_training=False))
             accuracy_test =   accuracy_teste_step +accuracy_test
-            #self.add_batch( treino[0],treino[2],treino[3] ,all_preds, all_targets)
+            self.add_batch( treino[0],treino[2],treino[3] ,all_preds, all_targets)
             i=i+1
-        self.report(step,tipo)
+        accuracy_test,avg_nr,avg_r = self.report(step,tipo)
         _end_time = time.time() 
-        tf.compat.v1.summary.scalar("loss/accuracy_test", (accuracy_test/i))
-        #self._ids=[]
-        #self._questions=[]
-        #self._answers=[]
-        #self._predictions=[]
-        #self._groundtruths=[]
-        #self.ArrarQuestoesErradas = []
-        #self.ArrayQuestoesCertas =[]
-        return (accuracy_test/i),(_end_time-_start_time)
+        tf.compat.v1.summary.scalar("loss/accuracy_test", (accuracy_test))
+        self._ids=[]
+        self._questions=[]
+        self._answers=[]
+        self._predictions=[]
+        self._groundtruths=[]
+        self.ArrarQuestoesErradas = []
+        self.ArrayQuestoesCertas =[]
+        questaotipo0 = self.ArrayTotalQuestoesCertas[0]/ ( self.ArrayTotalQuestoesErradas[0] +  self.ArrayTotalQuestoesCertas[0] )
+        questaotipo1 = self.ArrayTotalQuestoesCertas[1]/ (self.ArrayTotalQuestoesErradas[1] +  self.ArrayTotalQuestoesCertas[1])
+        questaotipo2 = self.ArrayTotalQuestoesCertas[2]/ (self.ArrayTotalQuestoesErradas[2] + self.ArrayTotalQuestoesCertas[2])
+        questaotipo3 = self.ArrayTotalQuestoesCertas[3]/ (self.ArrayTotalQuestoesErradas[3] +  self.ArrayTotalQuestoesCertas[3])
+        questaotipo4 = self.ArrayTotalQuestoesCertas[4]/ (self.ArrayTotalQuestoesErradas[4] +  self.ArrayTotalQuestoesCertas[4])
+        totalQuestoes = self.ArrayTotalQuestoesErradas[0] +  self.ArrayTotalQuestoesCertas[0] + self.ArrayTotalQuestoesErradas[1] +  self.ArrayTotalQuestoesCertas[1] + self.ArrayTotalQuestoesErradas[2] + self.ArrayTotalQuestoesCertas[2] + self.ArrayTotalQuestoesErradas[3] +  self.ArrayTotalQuestoesCertas[3] + self.ArrayTotalQuestoesErradas[4] +  self.ArrayTotalQuestoesCertas[4] 
+        totalQuestoesCertas = self.ArrayTotalQuestoesCertas[0] +   self.ArrayTotalQuestoesCertas[1] + self.ArrayTotalQuestoesCertas[2] +   self.ArrayTotalQuestoesCertas[3] +   self.ArrayTotalQuestoesCertas[4]
+        
+        self.ArrayTotalQuestoesCertas =[0,0,0,0,0] 
+        self.ArrayTotalQuestoesErradas =[0,0,0,0,0]
+        return (totalQuestoesCertas/totalQuestoes),(_end_time-_start_time),questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4
 
 
     def report(self,step,tipo):
@@ -394,10 +417,11 @@ class Trainer(object):
                 anserPred[np.argmax(pred[i,:])] = 1 
                 anserPred1 = answer2str(anserPred)
                 q_num = np.argmax(q[i][6:])
-                if  q_num > 2:
+                if  q_num >= 2:
                     count_r += 1
                     
                     if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
+                        self.ArrayTotalQuestoesCertas[q_num] +=1
                         correct_prediction_r += 1
                         correctQuest += 1 
                         #self.ArrayQuestoesCertas.append(str(int(id[i])))
@@ -409,6 +433,7 @@ class Trainer(object):
                         self.ArrayQuestoesCertas.append("tipo : Relacional")
                     else:
                         errorQuest += 1 
+                        self.ArrayTotalQuestoesErradas[q_num] += 1
                         #self.ArrarQuestoesErradas.append(str(int(id[i])))
                         self.ArrarQuestoesErradas.append ("qestao id numero : " + str(int(id[i])))
                         self.ArrarQuestoesErradas.append(quest)
@@ -421,6 +446,7 @@ class Trainer(object):
                 else:
                     count_nr += 1
                     if np.argmax(pred[i, :]) == np.argmax(gt[i, :]):
+                        self.ArrayTotalQuestoesCertas[q_num] +=1
                         correctQuest += 1 
                         correct_prediction_nr += 1
                         #self.ArrayQuestoesCertas.append(str(int(id[i])))
@@ -432,6 +458,7 @@ class Trainer(object):
                         self.ArrayQuestoesCertas.append("tipo : Nao-Relacional")
                     else:
                         errorQuest +=1
+                        self.ArrayTotalQuestoesErradas[q_num] += 1
                         #self.ArrarQuestoesErradas.append ( str(int(id[i])))
                         self.ArrarQuestoesErradas.append ("qestao id numero : " + str(int(id[i])))
                         self.ArrarQuestoesErradas.append(quest)
@@ -447,6 +474,7 @@ class Trainer(object):
         avg = float(correct_prediction_r+correct_prediction_nr)/(count_r+count_nr)
         log.info("Average accuracy: {}%".format(avg*100))
         file_folder = self.check_pathSaveTrain
+        return avg,avg_nr,avg_r
         #self.GravarArquivo(errorQuest,self.ArrarQuestoesErradas,"questaoErrada" +tipo ,file_folder,step )
         #self.GravarArquivo(correctQuest,self.ArrayQuestoesCertas,"questaoCerta"+ tipo,file_folder,step)
       
@@ -500,6 +528,8 @@ def check_data_path(path,id):
 
 
 def main():
+    
+
     import tensorflow as tf
     tf.test.is_gpu_available()
 
@@ -521,34 +551,39 @@ def main():
     parser.add_argument('--train_amount_network',  type=int, default=0)
     parser.add_argument('--train_type',  type=str , default='full')
     parser.add_argument('--train_nameDataset',  type=str , default='id')
-    parser.add_argument('--train_nameInitalDataset',  type=str , default='id')
+    
+    parser.add_argument('--GrupDataset',  type=str , default='0,1,2|3,4')
+    parser.add_argument('--OrdemDados',  type=str , default='E,E')
     parser.add_argument('--check_pathSaveTrain', type=str , default='id')
     parser.add_argument('--train_dir', type=str , default='padrao')
-
+    parser.add_argument('--orderDataset', type=str , default='1,0')
+    parser.add_argument('--StepChangeGroup', type=str , default='50000,50000')
+    parser.add_argument('--is_loadImage', type=bool , default='False')
     config = parser.parse_args()
 
     path = os.path.join('./datasets', config.dataset_path  )
-    adress = config.train_nameInitalDataset.split(',')
-    if check_data_path(path,adress[0]):
-        import sort_of_clevr as dataset
-    else:
-        raise ValueError(path)
+    #porcentual = config.train_nameInitalDataset.split(',')
+    GrupDataset = config.GrupDataset.split('|')
 
-    config.data_info = dataset.get_data_info()
-    config.conv_info = dataset.get_conv_info()
+    import sort_of_clevr as DataSetClevr
+    
+    config.data_info = DataSetClevr.get_data_info()
+    config.conv_info = DataSetClevr.get_conv_info()
    
-   
+    tipo =0
     dataset_train = []
-    for i in adress:
-        dataset_train.append(dataset.create_default_splits(path,is_full =True,id_filename=i))
-       
-    
-    dataset_test= dataset.create_default_splits(path,is_full =True,id_filename="id_test.txt")
+    if len(GrupDataset )> 0: 
+         for Grup in config.GrupDataset.split('|'):
+            dataset_train.append(DataSetClevr.create_default_splits_perc(path,is_full =True,grupoDatasets=Grup,is_loadImage=config.is_loadImage))
 
     
+    
+    dataset_test= DataSetClevr.create_default_splits(path,is_full =True,id_filename="id_test.txt",is_loadImage=config.is_loadImage)
+
+    
 
 
-    trainer = Trainer(config,dataset,
+    trainer = Trainer(config,DataSetClevr,
                       dataset_train, dataset_test)
 
     log.warning("dataset: %s, learning_rate: %f",

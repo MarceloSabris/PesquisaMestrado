@@ -18,7 +18,7 @@
            //gerar arquivo
            // "args":["--file","c:\\Source\\PesquisaMestrado","--percentualtype","0:0,1:0,2:0,3:0,4:100","--fileGenerate","C:\\Source\\PesquisaMestrado\\datasets\\Sort-of-CLEVR_teste_decode-image4\\tipo4.txt","--quantityfile","40000"]
             //treinar
-            "args": [ "--model", "rn", "--batch_size", "100","--train_nameInitalDataset","tipo0.txt,tipo1.txt,tipo2.txt,tipo3.txt,tipo4.txt","--check_pathSaveTrain","c:\\train_result_dinamico\\" ,"--train_dir","testealeatorio1"]      //          
+            "args": [ "--model", "rn","--StepChangeGroup","100000", "--batch_size", "100","--check_pathSaveTrain","c:\\train_result_dinamico\\" ,"--GrupDataset", "0.1,0,0,0,0","--train_dir","testealeatorio1","--orderDataset","0" ]      //          
            //evaler
            // "args":["--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "50","--checkpoint","C:\\teste\\model-2000" , "--file","Percentage_model-2000" ]
             //lod database 

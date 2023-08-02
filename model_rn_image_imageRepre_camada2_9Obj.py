@@ -31,10 +31,18 @@ class Model(object):
         self.conv_info = self.config.conv_info
              
         # create placeholders for the input
-        self.img = tf.compat.v1.placeholder(
-            name='img', dtype=tf.int16,
+        if self.config.is_loadImage == True:
+            self.img = tf.compat.v1.placeholder(
+             name='img', dtype=tf.float32,
+             shape=[self.batch_size, self.img_size, self.img_size, self.c_dim],
+            )
+        else: 
+            self.img = tf.compat.v1.placeholder(
+            name='img', dtype=tf.float32,
             shape=[self.batch_size, 1],
-        )
+            ) 
+           
+         
         self.q =  tf.compat.v1.placeholder(
             name='q', dtype=tf.float32, shape=[self.batch_size, self.q_dim],
         )
@@ -61,7 +69,7 @@ class Model(object):
 
     def get_feed_dict(self, batch_chunk, step=None, is_training=None):
         fd = {
-           # self.img: batch_chunk['img'],  # [B, h, w, c]
+            self.img: batch_chunk['img'],  # [B, h, w, c]
             self.q: batch_chunk['q'],  # [B, n]
             self.a: batch_chunk['a'],  # [B, m]
             #self.imgDecod : batch_chunk['imgDecod'],
@@ -77,7 +85,7 @@ class Model(object):
 
     def get_feed_dict2(self, batch_chunk, step=None, is_training=None):
         fd = {
-            #self.img: batch_chunk[0],  # [B, h, w, c]
+            self.img: batch_chunk[0],  # [B, h, w, c]
             self.q: batch_chunk[1],  # [B, n]
             self.a: batch_chunk[2],  # [B, m]
             #self.imgDecod : batch_chunk[3],
@@ -109,12 +117,16 @@ class Model(object):
             return tf.reduce_mean(loss), accuracy
         # }}}
 
+        def concat_coor1(o, i, d):
+            coor = tf.tile(tf.expand_dims(
+                [float(int(i / d)) / d, (i % d) / d], axis=0), [self.batch_size, 1])
+            o = tf.concat([o, tf.compat.v1.to_float(coor)], axis=1)
+            return o
         def concat_coor(o, i, d):
             coor = tf.tile(tf.expand_dims(
                 [float(int(i / d)) / d, (i % d) / d], axis=0), [self.batch_size, 1])
             o = tf.concat([o, tf.compat.v1.to_float(coor)], axis=1)
             return o
-
         def g_theta(o_i, o_j, q, scope='g_theta', reuse=True):
             with tf.compat.v1.variable_scope(scope, reuse=reuse) as scope:
                 if not reuse: log.warn(scope.name)
@@ -140,18 +152,37 @@ class Model(object):
         optimizer = tf.keras.optimizers.Adam(lr = 0.017)
 
         # Classifier: takes images as input and outputs class label [B, m]
-        def CONV(img, q,repImg, scope='CONV'): 
+        def CONV(img, q,repImg, scope='CONV', is_loadImage=False): 
             with  tf.compat.v1.variable_scope(scope) as scope:
                 # eq.1 in the paper
                 # g_theta = (o_i, o_j, q)
                 # conv_4 [B, d, d, k]
-                d = repImg.get_shape().as_list()[1]
+                if is_loadImage == True: 
+                  conv_1 = conv2d(img, conv_info[0], is_train, s_h=3, s_w=3, name='conv_1')
+                  conv_2 = conv2d(conv_1, conv_info[1], is_train, s_h=3, s_w=3, name='conv_2')
+                  conv_3 = conv2d(conv_2, conv_info[2], is_train, name='conv_3')
+                  conv_4 = conv2d(conv_3, conv_info[3], is_train, name='conv_4')
+                  d = conv_4.get_shape().as_list()[1]
+                else:
+                  d = repImg.get_shape().as_list()[1]
+                
                 all_g = []
                 for i in range(d*d):
-                    o_i = repImg[:, int(i / d), int(i % d), :]
-                    o_i = concat_coor(o_i, i, d)
+                    #o_i = repImg[:, int(i / d), int(i % d), :]
+                    if is_loadImage == True:
+                       o_i = conv_4[:, int(i / d), int(i % d), :]
+                       o_i = concat_coor(o_i, i, d)
+                    else: 
+                       o_i = repImg[:, int(i / d), int(i % d), :] 
                     for j in range(d*d):
-                        o_j = repImg[:, int(j / d), int(j % d), :]
+                        if is_loadImage == True:
+                           o_j = conv_4[:, int(i / d), int(i % d), :]
+                           o_j = concat_coor(o_i, i, d)
+                        else: 
+                           o_j = repImg[:, int(i / d), int(i % d), :]
+                        
+                        # o_j = repImg[:, int(j / d), int(j % d), :]
+                        #o_j = conv_4[:, int(i / d), int(i % d), :]
                         o_j = concat_coor(o_j, j, d)
                         if i == 0 and j == 0:
                             g_i_j = g_theta(o_i, o_j, q, reuse=False)
@@ -208,7 +239,7 @@ class Model(object):
                 fc_3 = fc(fc_2, n, activation_fn=None, name='fc_3')
                 return fc_3
 
-        g = CONV(self.img, self.q, self.codImagOri,scope='CONV')
+        g = CONV(self.img, self.q, self.codImagOri,scope='CONV',is_loadImage=self.config.is_loadImage)
         logits = f_phi(g, scope='f_phi')
         self.all_preds = tf.nn.softmax(logits)
         self.loss, self.accuracy = build_loss(logits, self.a)

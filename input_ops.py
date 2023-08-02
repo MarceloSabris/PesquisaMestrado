@@ -31,6 +31,7 @@ def create_input_ops(dataset,
                      data_id=None,
                      scope='inputs',
                      shuffle=True,
+                     is_loadImage=False
                      ):
     '''
     Return a batched tensor for the inputs from the dataset.

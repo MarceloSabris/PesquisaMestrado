@@ -9,7 +9,7 @@ import json
 import os
 import nltk
 import argparse
-import cv2
+
 import matplotlib.pyplot as plt
 import random
 
@@ -19,7 +19,7 @@ from sqlalchemy import create_engine
 
 from sqlalchemy import create_engine
 
-db_name = 'mestrado'
+db_name = 'postgres'
 db_user = 'postgres'
 db_pass = 'mudar123'
 db_host = 'localhost'
@@ -28,20 +28,21 @@ db_port = '5432'
 db_string = 'postgres://{}:{}@{}:{}/{}'.format(db_user, db_pass, db_host, db_port, db_name)
 db = create_engine(db_string)
 
+
  
-def add_new_row(questaoid,ordem,pergunta,Acertou,resposta,Tipo,usadaEm,porcentual,pasta,curriculum,coguinitividade,RelacionalNaoRelacional):
+def add_new_row(passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem):
     try:
-       query = "INSERT INTO mestrado.processamento2 (questaoid,ordem,pergunta,Acertou,resposta,Tipo,usadaEm,porcentual,pasta,curriculum,coguinitividade,relacional_nao_relacional) VALUES(%s,%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %( questaoid,ordem,pergunta,Acertou,resposta,Tipo,usadaEm,porcentual,pasta,curriculum,coguinitividade,RelacionalNaoRelacional)
+       query = "INSERT INTO Curriculos VALUES(%s,%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" %( passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem)
        db.execute(query) 
     except:
         print('erro -- ao executar')
         print(query)
 parser = argparse.ArgumentParser()
-parser.add_argument('--file', type=str, default='default')
-config = parser.parse_args()
+#parser.add_argument('--file', type=str, default='default')
+#config = parser.parse_args()
 
-file_to_search = config.file
-file_to_search = "C:\\Source\\PesquisaMestrado\\Resultado\\curriculo2\\" + file_to_search  
+#file_to_search = config.file
+file_to_search = "C:\\source\\PesquisaMestrado\\train_dir\\TreinamentoFaciltudo_novo1\\"   
 Files = [f for f in os.listdir(file_to_search) ]
 Files.sort()
 posQues =[]
@@ -52,32 +53,8 @@ resultpredication = []
 Files.sort()
 for File in Files:
             
-            if '.json' in File:
+            if 'Logs2.json' in File:
 
-              '''  if 'ques' in File:     
-                    with open(FolderSource + '\\' + File) as f:
-                            ques = json.load(f)
-          
-                            for que in ques :
-                                valList.append(que)
-                elif 'train' in File:
-                    with open(FolderSource + '\\' + File) as f:
-                            Ftrain = json.load(f)
-                            for tr in Ftrain:
-                                trainList.append(tr)
-               
-                el'''
-              usadaEm = "Treinamento"
-              Acertou = 0
-              if 'Treinamento' in File :
-                  usadaEm = "Treinamento"
-              if 'Teste' in File :
-                  usadaEm = "Teste"
-              if 'Certa' in File :
-                  Acertou = 1
-              if 'Errada' in File :
-                  Acertou = 0
-              
               with open(file_to_search + '\\' + File) as f:
                             fresultpredication = json.load(f)
                             s=0
