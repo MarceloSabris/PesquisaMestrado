@@ -526,6 +526,33 @@ def check_data_path(path,id):
     else:
         return False
 
+def runDynamicTrainner (config): 
+    GrupDataset = config.GrupDataset
+    path = os.path.join('./datasets', config.dataset_path  )
+    import sort_of_clevr as DataSetClevr
+    
+    config.data_info = DataSetClevr.get_data_info()
+    config.conv_info = DataSetClevr.get_conv_info()
+   
+    tipo =0
+    dataset_train = []
+    if len(GrupDataset )> 0: 
+         for Grup in config.GrupDataset.split('|'):
+            dataset_train.append(DataSetClevr.create_default_splits_perc(path,is_full =True,grupoDatasets=Grup,is_loadImage=config.is_loadImage))
+
+    
+    dataset_test= DataSetClevr.create_default_splits(path,is_full =True,id_filename="id_test.txt",is_loadImage=config.is_loadImage)
+
+    
+
+    trainner = None 
+    trainer = Trainer(config,DataSetClevr,
+                      dataset_train, dataset_test)
+
+    log.warning("dataset: %s, learning_rate: %f",
+                config.dataset_path, config.learning_rate)
+    trainer.train()
+      
 
 def main():
     
@@ -558,9 +585,17 @@ def main():
     parser.add_argument('--train_dir', type=str , default='padrao')
     parser.add_argument('--orderDataset', type=str , default='1,0')
     parser.add_argument('--StepChangeGroup', type=str , default='50000,50000')
-    parser.add_argument('--is_loadImage', type=bool , default='False')
+    parser.add_argument('--is_loadImage', type=str , default=False)
     config = parser.parse_args()
-
+    print('****************************************************')
+    print(config.is_loadImage)
+    if type(config.is_loadImage) == type(True): 
+       config.is_loadImage = config.is_loadImage
+    else:
+       if config.is_loadImage == 'True' : 
+            config.is_loadImage = True 
+       else:
+            config.is_loadImage = False
     path = os.path.join('./datasets', config.dataset_path  )
     #porcentual = config.train_nameInitalDataset.split(',')
     GrupDataset = config.GrupDataset.split('|')
@@ -589,7 +624,8 @@ def main():
     log.warning("dataset: %s, learning_rate: %f",
                 config.dataset_path, config.learning_rate)
     trainer.train()
-   
+
+
 
 if __name__ == '__main__':
     main()

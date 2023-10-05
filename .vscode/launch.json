@@ -18,12 +18,13 @@
            //gerar arquivo
            // "args":["--file","c:\\Source\\PesquisaMestrado","--percentualtype","0:0,1:0,2:0,3:0,4:100","--fileGenerate","C:\\Source\\PesquisaMestrado\\datasets\\Sort-of-CLEVR_teste_decode-image4\\tipo4.txt","--quantityfile","40000"]
             //treinar
-            "args": [ "--model", "rn","--StepChangeGroup","100000", "--batch_size", "100","--check_pathSaveTrain","c:\\train_result_dinamico\\" ,"--GrupDataset", "0.1,0,0,0,0","--train_dir","testealeatorio1","--orderDataset","0" ]      //          
+            //"args": [ "--model", "rn","--StepChangeGroup","100000", "--batch_size", "100","--check_pathSaveTrain","c:\\train_result_dinamico\\" ,"--GrupDataset", "1,1,1,1,1","--train_dir","testealeatorio1","--orderDataset","0" ,"--is_loadImage","False"]      //          
            //evaler
            // "args":["--dataset_path", "Sort-of-CLEVR_teste_decode-image3", "--model", "rn", "--batch_size", "50","--checkpoint","C:\\teste\\model-2000" , "--file","Percentage_model-2000" ]
             //lod database 
            // "args":[ "--file","Percentage_model-2000" ]
-              
+           // gerar treinador
+           "args":[ "--model", "rn","--StepChangeGroup","1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500,1500", "--batch_size", "100","--check_pathSaveTrain","c:\\train_result_dinamico\\" ,"--GrupDataset", "1,1,1,1,1","--train_dir","testealeatorio1","--orderDataset","0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66"  ,"--is_loadImage","False","--TotalStepChangeGroup","100","--QtdStepChangeGroup","3","--QtdRun","3","--PorcentualGrupDataset","0"]   
         }
     ]
   }
