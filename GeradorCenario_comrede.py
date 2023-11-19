@@ -76,7 +76,7 @@ class GerarTreinamento(object):
             for grup in range(self.config.QtdStepChangeGroup): 
                 GrupDataset += ','.join(map(str, self.split_with_zero(self.config.PorcentualGrupDataset,5))) + '|'
             GrupDataset = GrupDataset.rstrip(GrupDataset[-1])
-            self.config.train_dir = "dinamico_1310_2023"
+            self.config.train_dir = GrupDataset.replace("|", "_")
             #self.config.StepChangeGroup = ','.join(map(str, StepChangeGroup.astype(int))) 
             self.config.GrupDataset =  GrupDataset 
             #self.config.orderDataset = ','.join(map(str, orderDataset))      

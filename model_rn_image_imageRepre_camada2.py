@@ -224,5 +224,7 @@ class Model(object):
         tf.compat.v1.summary.scalar("loss/accuracy", self.accuracy)
         tf.compat.v1.summary.scalar("loss/cross_entropy", self.loss)
         log.warn('Successfully loaded the model.')
+        
+        
     
    

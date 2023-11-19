@@ -8,7 +8,7 @@ import os
 
 import numpy
 from six.moves import xrange
-
+import csv
 import matplotlib.pyplot as plt
 from util import log
 
@@ -28,8 +28,10 @@ import logging
 from datetime import datetime
 import random
 import DataBase as Postgree
-
+from datetime import datetime
+from collections import deque
 tf.get_logger().setLevel(logging.ERROR)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 tf.debugging.set_log_device_placement(True) 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 #tf.enable_eager_execution() 
@@ -41,12 +43,13 @@ class Trainer(object):
         from model_rn_image_imageRepre_camada2_9Obj import Model
         return Model
 
+    
     def __init__(self,
                  config,
                  data,
                  dataset,
                  dataset_test):
-        self.config = config
+        
         hyper_parameter_str = config.dataset_path+'_lr_'+str(config.learning_rate)
         #self.train_dir = './train_dir/%s-%s-%s-%s' % (
         #    config.model,
@@ -64,16 +67,17 @@ class Trainer(object):
         self.batch_size = config.batch_size
         self.data = data
         
-        _, self.batch_train,imgs = create_input_ops(dataset[0], self.batch_size,shuffle=False,
-                                               is_training=True,is_loadImage= self.config.is_loadImage)
+        _, self.batch_train,imgs = create_input_ops(dataset, self.batch_size,shuffle=False,
+                                               is_training=True,is_loadImage= config.is_loadImage)
 
         _, self.batch_test,ims = create_input_ops(dataset_test, self.batch_size,shuffle=False,                                          
-                                              is_training=False,is_loadImage= self.config.is_loadImage)
+                                              is_training=False,is_loadImage= config.is_loadImage)
         self.DataSetPath = os.path.join('./datasets', config.dataset_path)
         # --- create model ---
         Model = self.get_model_class(config.model)
         log.infov("Using Model class : %s", Model)
         self.model = Model(config)
+        
         #tf.keras.utils.plot_model(self.model, show_shapes=True, show_layer_names=True)
         # --- optimizer ---
         self.global_step = tf.compat.v1.train.get_or_create_global_step(graph=None)
@@ -88,9 +92,6 @@ class Trainer(object):
                 name='decaying_learning_rate'
             )
         self.QtdTest = len(dataset_test) 
-        self.dataset = dataset[0]
-        self.datasets = dataset
-        self.dataset_test = dataset_test
         self.check_op = tf.no_op()
         self.trainPosition = 0 
         self._ids = []
@@ -107,7 +108,7 @@ class Trainer(object):
         
         self.ArrayQuestoesCertas = [] 
         self.ArrarQuestoesErradas =[]
-        self.check_pathSaveTrain= self.config.check_pathSaveTrain
+        self.check_pathSaveTrain= config.check_pathSaveTrain
         self.ArrayTotalQuestoesCertas =[0,0,0,0,0]
         self.ArrayTotalQuestoesErradas =[0,0,0,0,0]
        
@@ -167,7 +168,21 @@ class Trainer(object):
             log.info("Checkpoint path: %s", self.ckpt_path)
             self.saver.restore(self.session, self.ckpt_path)
             log.info("Loaded the pretrain parameters from the provided checkpoint path")
+
+    
+
+
+    def GravarArquivo1 ( self,data_dict,fname):
       
+       print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
+       os.makedirs(self.train_dir, exist_ok=True)
+       fname = self.train_dir + "/" + fname +".json"
+       # Create file
+       with open(fname, 'a') as outfile:
+         json.dump(data_dict, outfile, ensure_ascii=False, indent=2) 
+         outfile.write('\n')
+         outfile.close() 
+
     def add_batch (self, id,questions,ans, prediction, groundtruth):
         # for now, store them all (as a list of minibatch chunks)
         self._ids.append(id)
@@ -188,121 +203,129 @@ class Trainer(object):
             plt.savefig(   self.train_dir + '/acuracy_datalenght.png')
          #   plt.show()
 
-    def train(self):
+    def train(self,config):
         log.infov("Training Starts!")
       
         #alterei aqui 
-        max_steps_datasets =100000
-        max_step_dataset = 50000
-        tempogravarlog  =0                            
-        #output_save_step = 4000
-        teste_log_Save = 1500
-        stepTimeTotalExecution = 0  
-        _start_time_total = time.time()
-        step_time_test_Total = 0
-        totalTempoGravarArquivoLog = 0
-        TotalTempoGravaRede =0 
-        _tempoPorRodada = time.time()
-        #if ( self.config.train_type!='full'):
-            #      if (self.config.train_type!='full_after'):
-            #          if ( self.config.train_amount_network ==  s):
-            #            dataset_train = self.data.create_default_splits(os.path.join(self.config.pathDataSets,self.config.train_nameDataset),True,True)
-            #            _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
-            #                                   is_training=True)
-            #if ( self.config.train_amount_network ==  'multiply'): 
-            #            nameposition=0
-            #            for steps in self.config.train_amount_network.split(','):
-            #                if s== int(steps):
-            #                   dataset_train = self.data.create_default_splits(os.path.join( self.config.pathDataSets,self.config.train_nameDataset.split(',')[nameposition]),True,True)
-            #                   _, self.batch_train,imgs = create_input_ops(dataset_train, self.config.batch_size,
-            #                                   is_training=True)
-        stepControl = 0   
-        accuracy_test= 0.0
-       
-        while stepControl < max_steps_datasets  : 
-          datasetcont = -1
-          for cont in self.config.orderDataset.split(',') :
-            accuracy = 0.00
+        accuracy = 0.00
             #accuracy_total = 0.001
-            datasetcont = datasetcont+1
-            self.dataset = self.datasets[int(cont)]
-            dataset = self.datasets[int(cont)]
-            _, batch_train,imgs = create_input_ops(self.datasets[int(cont)], self.config.batch_size,
-                                               is_training=True,is_loadImage=self.config.is_loadImage)
-            self.trainPosition =0
-            s=1
-            stepdataset = 0
-            log.info("mudou o database")
-            while stepdataset < int(self.config.StepChangeGroup.split(',')[int(cont)] )  :
-              for s in xrange(dataset.maxGrups -1):
-                if stepdataset > int(self.config.StepChangeGroup.split(',')[int(cont)] ) : 
-                    break
-                stepdataset =stepdataset+1
-                #log.infov(s)
-                
-                step, accuracy, summary, loss, step_time = \
-                    self.run_single_step(batch_train, step=stepControl,teste_log_Save= teste_log_Save, is_train=True)
-                stepTimeTotalExecution = step_time + stepTimeTotalExecution
-                #accuracy_total = accuracy +accuracy_total
-                self.trainPosition = self.trainPosition + 1      
-                stepControl = stepControl+1    
-                if stepControl % teste_log_Save == 0 :
+         
+        _start_time_total = time.time()
+        s=1
+        stepExecution = 0
+        _, batch_train,imgs = create_input_ops(config.dataset_train, config.batch_size,
+                                               is_training=True,is_loadImage=config.is_loadImage)
+        
+        stepTimeTotalExecution = 0
+        step_time_test_Total = 0 
+        questaotipo0 =0
+        questaotipo1 = 0    
+        questaotipo2 = 0
+        questaotipo3 = 0
+        questaotipo4 = 0
+        totalTempoGravarArquivoLog =0
+        TotalTempoGravaRede = 0 
+        print(stepExecution)
+        print(config.StepChangeGroupRun)
+        print(config.runWhenlearned)
+        print(config.GroupQuestion)
+        
+        
+        while config.runWhenlearned== True or stepExecution <= int(config.StepChangeGroupRun)  : 
+          #datasetcont = -1
+          #for cont in self.config.orderDataset.split(',') :
+         
+          step, accuracy, summary, loss, step_time = \
+                    self.run_single_step(batch_train, step=config.trainGlobal,config=config)
+          stepTimeTotalExecution = step_time + stepTimeTotalExecution
+                #accuracy_total = accuracy +accuracy_total 1
+          
+          if config.trainGlobal % config.teste_log_Save == 0 or  stepExecution == config.StepChangeGroupRun :
 
                  # periodic inference
                     accuracy_test, step_time_test,questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4 = \
-                        self.run_test('Teste' ,step,self.dataset_test)
+                        self.run_test('Teste' ,step,config.dataset_test)
                     step_time_test_Total = step_time_test + step_time_test_Total
                     self.log_step_message(step, accuracy, accuracy_test, loss, step_time,step_time_test)
                     tempogravarlog = time.time()
+                    
                     temp=[]
-                    temp.append('step:'+ str(step))
-                    temp.append('teste - time:' + str(step_time_test))
-                    temp.append('train- time:' + str(step_time))
+                    temp.append( str( config.trainGlobal))
+                    temp.append(str(accuracy))
+                    temp.append(str(accuracy_test))
+                    temp.append(str(questaotipo0))
+                    temp.append(str(questaotipo1))
+                    temp.append(str(questaotipo2))
+                    temp.append(str(questaotipo3))
+                    temp.append(str(questaotipo4))    
+                    self.GravarCSV(temp,'Logs')
+                    
+                    temp=[]
+                    temp.append('step:'+ str( config.trainGlobal))
                     temp.append('accuracy:'+ str(accuracy))
                     temp.append('accuracy_test:'+ str(accuracy_test))
-                    temp.append('loss:'+ str(loss))
-                    temp.append('dataset:'+str(datasetcont))
                     temp.append('questaotipo0:'+str(questaotipo0))
                     temp.append('questaotipo1:'+str(questaotipo1))
                     temp.append('questaotipo2:'+str(questaotipo2))
                     temp.append('questaotipo3:'+str(questaotipo3))
-                    temp.append('questaotipo4:'+str(questaotipo4))            
+                    temp.append('questaotipo4:'+str(questaotipo4))  
+                    temp.append('PercDatasetTrain:'+str(config.PercDatasetTrain))           
                     self.GravarArquivo1(temp,'Logs')
-                    Postgree.add_new_row(step,self.config.train_dir ,accuracy,accuracy_test,questaotipo0,questaotipo1, questaotipo2,questaotipo3,questaotipo4,self.config.GrupDataset.split('|')[int(cont)] )
+                    
+                    Postgree.add_new_row(config.trainGlobal,config.train_dir ,accuracy,accuracy_test,questaotipo0,questaotipo1, questaotipo2,questaotipo3,questaotipo4,config.PercDatasetTrain)
                     totalTempoGravarArquivoLog = totalTempoGravarArquivoLog + (time.time() -  tempogravarlog)
 
 
-                    self.summary_writer.add_summary(summary, global_step=stepControl)         
+                    self.summary_writer.add_summary(summary, global_step=config.trainGlobal )         
 
-                #log.infov( 'Tempo total rodada' + str((time.time() - _tempoPorRodada)))
+                #log.infov( 'Tempo total treinamentoada' + str((time.time() - _tempoPorRodada)))
                     now = datetime.now()
                 #self.run_test('Treino' ,step,self.dataset)
                     current_time = now.strftime("%H:%M:%S")
 
                     inicioTempoGravaRede = time.time()
-                    log.infov( "%s Saved checkpoint at %d",stepControl,  s) 
+                    log.infov( "%s Saved checkpoint at %d",config.trainGlobal,  s) 
                     save_path = self.saver.save(self.session,
                                             os.path.join(self.train_dir, 'model'),
                                             global_step=step)
+                     
+                    
                     TotalTempoGravaRede = TotalTempoGravaRede + (time.time() -inicioTempoGravaRede )
-                if stepdataset % 5000 == 0: 
+          if ( stepExecution >1 and  stepExecution%(10*config.dataset_train.maxGrups)  == 0): 
                  
-                 self.data.updateIdsDataSet( os.path.join('./datasets', self.config.dataset_path  ), self.datasets[int(cont)], grupoDatasets= self.config.GrupDataset.split('|')[int(cont)])
-              
-                 dataset = self.datasets[int(cont)]
-                 _, self.batch_train,imgs = create_input_ops(dataset, self.config.batch_size,
-                                               is_training=True,is_loadImage=self.config.is_loadImage)
+                 self.data.updateIdsDataSet( os.path.join('./datasets', config.dataset_path  ), config.dataset_train, grupoDatasets= config.PercDatasetTrain)
+                 _, self.batch_train,imgs = create_input_ops(config.dataset_train, config.batch_size,
+                                               is_training=True,is_loadImage=config.is_loadImage)
+          if  ( config.GroupQuestion=="NoRelational" and   questaotipo0>0.98  and questaotipo1 >0.98 and questaotipo2>0.98   ) : 
+               stepExecution = stepExecution+1     
+               config.trainPosition = config.trainPosition + 1      
+               config.trainGlobal = config.trainGlobal +1
+               break;
+          if  ( config.GroupQuestion=="Relational" and   questaotipo3 >0.90 and questaotipo4>0.90   ) : 
+               stepExecution = stepExecution+1     
+               config.trainPosition = config.trainPosition + 1      
+               config.trainGlobal = config.trainGlobal +1
+               break;
+          
+          
+          
+          #config.trainPosition = config.trainPosition+1  
+          stepExecution = stepExecution+1     
+          config.trainPosition = config.trainPosition + 1      
+          config.trainGlobal = config.trainGlobal +1
         self.plot_acuracy()
         _end_time_total = time.time()
+    
         log.info('Tempo total de validacao'+ str(step_time_test_Total))
         log.info( 'Tempo total treinamento' + str((stepTimeTotalExecution)))
         log.info( 'Tempo total para gravar log' + str((totalTempoGravarArquivoLog)))
         log.info( 'Tempo total para gravar rede' + str((TotalTempoGravaRede)))
         log.info( 'Tempo total' + str((_end_time_total - _start_time_total)))
         
+        return questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4        
        
 
-    def run_single_step(self, batch,teste_log_Save, step=None, is_train=True):
+    def run_single_step(self, batch, config, step=None):
         _start_time = time.time()
         qtd = 100
         #batch_chunk = self.session.run(batch)
@@ -311,9 +334,9 @@ class Trainer(object):
 
         
         
-        if (self.trainPosition > self.dataset.maxGrups -1):
-            self.trainPosition = 0
-        treino = self.dataset.batch[self.trainPosition]
+        if (config.trainPosition >config.dataset_train.maxGrups -1):
+            config.trainPosition = 0
+        treino = config.dataset_train.batch[config.trainPosition]
         fetch = [self.global_step, self.model.accuracy, self.summary_op,
                          self.model.loss, self.check_op, self.optimizer,  self.model.all_preds, self.model.a]
       
@@ -327,12 +350,9 @@ class Trainer(object):
         fetch_values = self.session.run(
                   fetch, feed_dict=self.model.get_feed_dict2([treino[1],treino[2],treino[3],treino[4],treino[5],treino[6],fetch], step=step)
                 )
-        posicao = step
+      
         [step, accuracy, summary, loss] = fetch_values[:4]
        
-        #if posicao % teste_log_Save == 0 :
-        #   self.add_batch( treino[0],treino[2],treino[3] ,fetch_values[6], fetch_values[7])
-        #   self.report(step,'treinamento')
            
         try:
                 if self.plot_summary_op in fetch:
@@ -343,17 +363,18 @@ class Trainer(object):
         _end_time = time.time()
         return step, accuracy, summary, loss,  (_end_time - _start_time)
 
-    def GravarArquivo1 ( self,data_dict,fname):
+    def GravarCSV ( self,data_dict,fname):
       
-       print("gravar arquivo: " + fname + " qtd: " +  str(len(data_dict)))
+       print("gravar arquivo: " + fname)
        os.makedirs(self.train_dir, exist_ok=True)
-       fname = self.train_dir + "/" + fname +".json"
+       fname = self.train_dir + "/" + fname +".csv"
        # Create file
-       with open(fname, 'a') as outfile:
-         json.dump(data_dict, outfile, ensure_ascii=False, indent=2) 
-         outfile.write('\n')
-         outfile.close() 
-
+       file =  open(fname, 'a',newline='')
+       writer = csv.writer(file)   
+       writer.writerow(data_dict) 
+       
+       file.close()
+       
     def run_test(self,tipo,step ,dataset,is_train=False):
         _start_time = time.time()
         treino=[]
@@ -489,6 +510,7 @@ class Trainer(object):
       with open(fname, 'w') as outfile:
         json.dump(data_dict, outfile, ensure_ascii=False, indent=4) 
         outfile.close()
+    
     def log_step_message(self, step, accuracy, accuracy_test, loss, step_time, step_time_training,is_train=True):
         self.acuracy.append(accuracy)
         self.step.append(step)
@@ -512,6 +534,11 @@ class Trainer(object):
                          )
                )
 
+    
+    def Clear(self): 
+      del self.model
+      self.model = None  
+    
 
 def check_data_path(path):
     if os.path.isfile(os.path.join(path, 'data.hy')) \
@@ -526,34 +553,113 @@ def check_data_path(path,id):
     else:
         return False
 
-def runDynamicTrainner (config): 
-    GrupDataset = config.GrupDataset
-    path = os.path.join('./datasets', config.dataset_path  )
-    import sort_of_clevr as DataSetClevr
+def split_with_sum(self,limit, num_elem, tries=50):
+       v = np.random.randint(0, limit, num_elem)
+       
+       s = sum(v)
+       if (np.sum(np.round(v/s*limit)) == limit):
+        return np.round(v / s * limit)
+       elif (np.sum(np.floor(v/s*limit)) == limit):
+        return np.floor(v / s * limit)
+       elif (np.sum(np.ceil(v/s*limit)) == limit):
+        return np.ceil(v / s * limit)
+       else:
+        return self.split_with_sum(limit, num_elem, tries-1)
     
-    config.data_info = DataSetClevr.get_data_info()
-    config.conv_info = DataSetClevr.get_conv_info()
+def split_with_zero(limit, num_elem, tries=50):
+       v = np.random.rand(num_elem)
+       s = sum(v)
+       if limit == 0 :
+        return np.round(v,1)
+       elif   (np.sum(np.round(v/s*limit,1)) == limit):
+        return np.round(v / s * limit,1)
+       
+       else:
+        return split_with_zero(limit, num_elem, tries-1)
+
+def runGenerateCenary(config):     
+ 
+ 
+ for treinamento in range(config.QtdRun):
+            print("**********************treinamentoada *********************")
+            print(treinamento)
+            #StepChangeGroup = self.split_with_sum( self.config.TotalStepChangeGroup,self.config.QtdStepChangeGroup)
+            #orderDataset = [item for item in range(0,self.config.QtdStepChangeGroup )]   
+            GrupDataset = ""
+            GroupSlip = ""
+            
+            for grup in range(config.QtdStepChangeGroup): 
+                GrupDataset += ','.join(map(str, split_with_zero(config.PorcentualGrupDataset,5))) + '|'
+            for grup in range(config.QtdStepChangeGroup): 
+                GroupSlip += config.StepChangeGroup +","   
+                  
+            GrupDataset = GrupDataset.rstrip(GrupDataset[-1])
+            GroupSlip = GroupSlip.rstrip(GroupSlip[-1])
+            data = time.strftime(r"%d%m%Y_%H%M", time.localtime())
+            
+            config.train_dir = "teste_"+ data
+            #self.config.StepChangeGroup = ','.j=oin(map(str, StepChangeGroup.astype(int))) 
+            config.GrupDataset =  GrupDataset 
+            config.StepChangeGroup = GroupSlip 
+            
+            #self.config.orderDataset = ','.join(map(str, orderDataset))      
+            for test in range(3):
+              run(config)
+              
+            
+  
+
+
+def run ( config ): 
+   
+    #porcentual = config.train_nameInitalDataset.split(',')
+    GrupDataset = config.GrupDataset.split('|')
+    cont = 0
+    
+    trainer = None 
+   #porcentual = config.train_nameInitalDataset.split(',')
+    GrupDataset = config.GrupDataset.split('|')
+    cont = 0
+   
+    trainer = None 
    
     tipo =0
-    dataset_train = []
-    if len(GrupDataset )> 0: 
-         for Grup in config.GrupDataset.split('|'):
-            dataset_train.append(DataSetClevr.create_default_splits_perc(path,is_full =True,grupoDatasets=Grup,is_loadImage=config.is_loadImage))
-
-    
-    dataset_test= DataSetClevr.create_default_splits(path,is_full =True,id_filename="id_test.txt",is_loadImage=config.is_loadImage)
-
-    
-
-    trainner = None 
-    trainer = Trainer(config,DataSetClevr,
-                      dataset_train, dataset_test)
-
-    log.warning("dataset: %s, learning_rate: %f",
+    cont =len(config.GrupDataset.split('|'))
+    contador=0 
+    while cont > contador  : 
+     config.dataset_train = config.DataSetClevr.create_default_splits_perc(config.path,is_full =True,grupoDatasets=config.GrupDataset.split('|')[contador],is_loadImage=config.is_loadImage)
+     # = config.StepChangeGroup[cont-1]
+     config.PercDatasetTrain =config.GrupDataset.split('|')[contador]
+     config.StepChangeGroupRun = config.StepChangeGroup.split(',')[contador]
+     
+     if trainer == None :    
+        trainer = Trainer(config,config.DataSetClevr,
+                      config.dataset_train, config.dataset_test)
+     log.warning("dataset: %s, learning_rate: %f",
                 config.dataset_path, config.learning_rate)
-    trainer.train()
-      
+     
+     if len(config.runWhenlearnedGroup.split('|'))> contador : 
+        if type(config.runWhenlearnedGroup.split('|')[contador]) == type(True): 
+             config.runWhenlearned = config.runWhenlearnedGroup.split('|')[contador]
+        else:
+          if config.runWhenlearnedGroup.split('|')[contador] == 'True' : 
+            config.runWhenlearned = True 
+          else:
+            config.runWhenlearned = False  
+        config.GroupQuestion =   config.GroupQuestionGrup.split('|')[contador]
+            
+     else:
+       config.runWhenlearned = False  
+       config.GroupQuestion = ""
+     print(cont)
+     print(contador)
+     print(config.GroupQuestion)
+     trainer.train(config)
+     contador = contador +1
+    
+    del trainer
 
+    
 def main():
     
 
@@ -566,7 +672,7 @@ def main():
     #session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_config))
     import argparse
     #import os
-    #os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     parser = argparse.ArgumentParser()
     parser.add_argument('--batch_size', type=int, default=50)
     parser.add_argument('--model', type=str, default='rn', choices=['rn', 'baseline'])
@@ -586,6 +692,14 @@ def main():
     parser.add_argument('--orderDataset', type=str , default='1,0')
     parser.add_argument('--StepChangeGroup', type=str , default='50000,50000')
     parser.add_argument('--is_loadImage', type=str , default=False)
+    
+    parser.add_argument('--TotalStepChangeGroup', type=int, default=0)
+    parser.add_argument('--QtdStepChangeGroup', type=int, default='3')
+    parser.add_argument('--QtdRun', type=int, default='3')
+    parser.add_argument('--PorcentualGrupDataset', type=int, default='0') 
+    parser.add_argument('--runWhenlearnedGroup', type=str, default=False) 
+    parser.add_argument('--GroupQuestionGrup', type=str, default='') 
+    
     config = parser.parse_args()
     print('****************************************************')
     print(config.is_loadImage)
@@ -597,36 +711,229 @@ def main():
             config.is_loadImage = True 
        else:
             config.is_loadImage = False
-    path = os.path.join('./datasets', config.dataset_path  )
-    #porcentual = config.train_nameInitalDataset.split(',')
-    GrupDataset = config.GrupDataset.split('|')
+   
 
-    import sort_of_clevr as DataSetClevr
+   
+    config.path =   path = os.path.join('./datasets', config.dataset_path  ) 
+    config.max_steps_datasets =100000
+    config.max_step_dataset = 50000
+    config.tempogravarlog  =0                            
+       #output_save_step = 4000
+    config.teste_log_Save = 1500
+    config.stepTimeTotalExecution = 0  
+    config._start_time_total = time.time()
+    config.step_time_test_Total = 0
+    config.totalTempoGravarArquivoLog = 0
+    config.TotalTempoGravaRede =0 
+    config._tempoPorRodada = time.time()
+    config.stepControl = 0   
+    config.accuracy_test= 0.0
+    config.trainPosition =0
+    config.trainGlobal =0
+    config.teste_log_Save = 1500
     
+    import sort_of_clevr as DataSetClevr 
+    config.DataSetClevr =  DataSetClevr
+    config.dataset_test= config.DataSetClevr.create_default_splits(config.path,is_full =True,id_filename="id_test.txt",is_loadImage=config.is_loadImage)
     config.data_info = DataSetClevr.get_data_info()
     config.conv_info = DataSetClevr.get_conv_info()
-   
-    tipo =0
-    dataset_train = []
-    if len(GrupDataset )> 0: 
-         for Grup in config.GrupDataset.split('|'):
-            dataset_train.append(DataSetClevr.create_default_splits_perc(path,is_full =True,grupoDatasets=Grup,is_loadImage=config.is_loadImage))
-
+    _ , config.batch_train,config.imgs = create_input_ops(config.dataset_test,config.batch_size,
+                                               is_training=True,is_loadImage=config.is_loadImage)
     
     
-    dataset_test= DataSetClevr.create_default_splits(path,is_full =True,id_filename="id_test.txt",is_loadImage=config.is_loadImage)
+    return config   
 
-    
+def runGenerateDQN(config):     
+ 
+ input_shape = 5
+ num_actions = 3
+ num_episodes = 15
+ epsilon = 1
+ gamma = 0.9
+ batch = 35
+
+ epoch = 0
+ alpha = 0.1
+ 
+
+ 
+ # Set up the optimizer and loss function
+ 
+ #value_network = tf.keras.models.load_model('keras')
+ epsod = 0
+ nomepasta = "testeNovoSetupdqn5cenarios"
+ config.GroupQuestion = ""
+ trainer = None
+ data = time.strftime(r"%d%m%Y_%H%M", time.localtime())
+ #data = "06112023_1710"
+ 
+ config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
+ 
+ trainer = Trainer(config,config.DataSetClevr,
+                      config.dataset_test, config.dataset_test) 
+
+ value_network = tf.keras.models.Sequential([
+    tf.keras.layers.Dense(32, activation='relu', input_shape=(input_shape,)),
+    tf.keras.layers.Dense(32, activation='relu'),
+    tf.keras.layers.Dense(num_actions)
+     ])
+ optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+ loss_fn = tf.keras.losses.MeanSquaredError(reduction="auto", name="mean_squared_error")  
+  
+ #config.train_dir = "testedqn_"+ data+ "_epsod_6" 
+ 
+ #value_network = tf.keras.models.load_model('train_dir/' +nomepasta +"_"+ data+ "_epsod_2" + '/keras/')
+ replay = deque(maxlen=20000)
+ while epsod <num_episodes :
+ 
+  
+  
+  config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
+  config.StepChangeGroupRun=0
+  config.trainGlobal = 0
+  config.trainPosition = 0
+  #08/11
+  GroupSlip =3500           
+  #GroupSlip =4500 
+  state =[0,0,0,0,0]
+  
+            
 
 
-    trainer = Trainer(config,DataSetClevr,
-                      dataset_train, dataset_test)
+            
+  for acao in range(12):
+            print("**********************acao *********************")
+            print(acao)
+            #StepChangeGroup = self.split_with_sum( self.config.TotalStepChangeGroup,self.config.QtdStepChangeGroup)
+            #orderDataset = [item for item in range(0,self.config.QtdStepChangeGroup )]   
+            groupdataSet = ['1,1,1,0.1,0.1','1,1,1,0.5,0.5', '1,1,1,1,1','0.1,0.1,0.1,1,1','0.5,0.5,0.5,1,1'] 
+            # testedqn0-01cenarios_09112023_1320_epsod_10 groupdataSet = ['1,1,1,0.1,0.1','1,1,1,1,1','0.1,0.1,0.1,1,1'] 
+            # testeNovoSetupdqn3cenarios0_17112023_2129_epsod_15 groupdataSet = ['1,1,1,0.1,0.1','1,1,1,1,1','0.1,0.1,0.1,1,1'] 
+            #groupdataSet = ['1,1,1,0,0','1,1,1,1,1','0,0,0,1,1'] 
+            # testedqn0-0cenarios_08112023_1346_epsod_8 groupdataSet = ['1,1,1,0.1,0','1,1,1,1,1','0,0,0,1,1'] 
+            #,'0.5,0.5,0.5,1,1','0.8,0.8,0.8,1,1']
+            
+            value_function = value_network.predict(np.array([state]),verbose=0)[0]
+                
+            # quando for ultimo  epsodio não usar aleatoriedade 
+                
+            if np.random.rand()>epsilon or num_episodes== epsod:
+               action = np.argmax(value_function)
+            else:
+               action = np.random.choice(num_actions)
+            print ('*************** action ')
+            print (action)      
+            config.GrupDataset =  groupdataSet[action] 
+            
+            
+            
+            #self.config.StepChangeGroup = ','.j=oin(map(str, StepChangeGroup.astype(int))) 
+            
+            config.StepChangeGroup = GroupSlip 
+            
+                             
+            config.dataset_train = config.DataSetClevr.create_default_splits_perc(config.path,is_full =True,grupoDatasets=config.GrupDataset,is_loadImage=config.is_loadImage)
+             # = config.StepChangeGroup[cont-1]
+            config.PercDatasetTrain =config.GrupDataset
+            config.StepChangeGroupRun = GroupSlip
+            
+            log.warning("dataset: %s, learning_rate: %f",
+            config.dataset_path, config.learning_rate)
+            config.runWhenlearned = False 
+            questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4 = trainer.train(config)
+            rewards =  questaotipo0 +  questaotipo1  + questaotipo2 + questaotipo3 +  questaotipo4
+            
+            # 10 epsodios  
+            # sumarização das questões 
+            # agrupar as questões, as 10  questões 
+            
+             
+                      
+            # 10 epsodios, qual a questão foi escolhido em cada tempo - excell 
+             
+             
+            #media das 3 execuções  
+            
+            #minimo das execuções 
+            
+            
+            done = 0 
+            next_state = [questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4]
+            #if action == 0 : 
+            #  next_state[5] = 1
+            #elif action == 1 :  
+            #   next_state[6] = 1
+            #else:
+            #  next_state[7] = 1
+            
+            if rewards > 4.75 :
+               done = 1
+            replay.append((state,action,rewards,next_state,done))
+            state = next_state
+            
+            if done==1:        
+              break
+            if len(replay)>batch:
+               
+               #5 - ações
+               #colar 35 - açoes  
+                            
+             with tf.GradientTape()    as tape:
+                batch_ = random.sample(replay,batch)
+                q_value1 = value_network(tf.convert_to_tensor([x[0] for x in batch_]))
+                q_value2 = value_network(tf.convert_to_tensor([x[3] for x in batch_]))
+                
+                reward = tf.convert_to_tensor([x[2] for x in batch_])
+                action = tf.convert_to_tensor([x[1] for x in batch_])
+                done =   tf.convert_to_tensor([x[4] for x in batch_])
+      
+                
+                actual_q_value1 = tf.cast(reward,tf.float64) + tf.cast(tf.constant(alpha),tf.float64)*(tf.cast(tf.constant(gamma),tf.float64)*tf.cast((tf.constant(1)-done),tf.float64)*tf.cast(tf.reduce_max(q_value2),tf.float64))           
+                loss = tf.cast(tf.gather(q_value1,action,axis=1,batch_dims=1),tf.float64)
+                loss = loss - actual_q_value1
+                loss = tf.reduce_mean(tf.math.pow(loss,2))
 
-    log.warning("dataset: %s, learning_rate: %f",
-                config.dataset_path, config.learning_rate)
-    trainer.train()
+        
+                grads = tape.gradient(loss, value_network.trainable_variables)
+                optimizer.apply_gradients(zip(grads, value_network.trainable_variables))
 
+                print('Epoch {} done with loss {} !!!!!!'.format(epoch,loss))
+                epoch+=1 
+                #epoch%8==0 and 
+            
+                 
+            
+            if acao%8==0 and epsilon>0.1:
+                epsilon*=0.95
+                           
+                
+  
+  value_network.save('train_dir/' +config.train_dir + '/keras/')
+  
+  trainer.Clear()  
+  del trainer 
+  del value_network
+  tf.keras.backend.clear_session()
+  tf.compat.v1.reset_default_graph()
+  import gc
+  trainer = None 
+  gc.collect()
+  value_network = tf.keras.models.load_model('train_dir/' +config.train_dir + '/keras/')
+  optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+  loss_fn = tf.keras.losses.MeanSquaredError(reduction="auto", name="mean_squared_error") 
+  epsod = epsod +1  
+  config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
+  trainer = Trainer(config,config.DataSetClevr,
+                      config.dataset_test, config.dataset_test) 
+
+  
 
 
 if __name__ == '__main__':
-    main()
+    config = main()
+    if config.QtdStepChangeGroup ==0:
+       run(config)
+    else : 
+        runGenerateDQN(config) 
+
+
