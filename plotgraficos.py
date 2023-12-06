@@ -74,13 +74,16 @@ def curriculos_geral(caminho,curriculo):
     for i in teste: 
         dataEp0 = data1.loc[data1['ep'] ==i ]
         passo_list.append(dataEp0['passo'])
-        fig, ax = plt.subplots()
-        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_0'])
-        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_1'])
-        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_2'])
-        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_3'])
-        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_4'])
-        fig.autofmt_xdate()
+        fig, ax = plt.subplots(figsize = (12, 6))
+        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_0'],label="Quest-0")
+        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_1'],label="Quest-1")
+        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_2'],label="Quest-2")
+        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_3'],label="Quest-3")
+        ax.plot(dataEp0['passo'], dataEp0['acuracy_questao_4'],label="Quest-4")
+        plt.style.use('fivethirtyeight')
+        #fig.legend(loc='upper center', bbox_to_anchor=(1, .4))
+        ax.legend(loc='upper center',ncol=5,title="Questões X Acuracy Ep" + str(i) ,bbox_to_anchor=(0.5, 1.2))
+        fig.autofmt_xdate() 
         fig.savefig('train_dir/' + caminho + '/graficos/acuracyquestoes_ep'+str(i)+'.png')
         plt.close(fig)
         my_list_quest0.append(dataEp0['acuracy_questao_0'])
@@ -88,34 +91,40 @@ def curriculos_geral(caminho,curriculo):
         my_list_quest2.append(dataEp0['acuracy_questao_2'])
         my_list_quest3.append(dataEp0['acuracy_questao_3'])
         my_list_quest4.append(dataEp0['acuracy_questao_4'])
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize = (15, 9))
     for i in teste:
         passo = passo_list[i]
         ax.plot(passo_list[i], my_list_quest0[i],label="EP" + str(i))
+    ax.legend(loc='upper center',ncol=8,title="Epsodio x Questão 0",bbox_to_anchor=(0.5, 1.2))
     fig.autofmt_xdate()
     fig.savefig('train_dir/' + caminho + '/graficos/acuracyQuestoes0PorEpso.png')
     plt.close(fig)   
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize = (15, 9))
     for i in teste:
         ax.plot(passo_list[i], my_list_quest1[i],label="EP" + str(i))
+    ax.legend(loc='upper center',ncol=8,title="Epsodio x Qiestão 1",bbox_to_anchor=(0.5, 1.2))
     fig.autofmt_xdate()
     fig.savefig('train_dir/' + caminho + '/graficos/acuracyQuestoes1PorEpso.png')
     plt.close(fig)   
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize = (15, 9))
     for i in teste:
         ax.plot(passo_list[i], my_list_quest2[i],label="EP" + str(i))
+    ax.legend(loc='upper center',ncol=8,title="Epsodio x Questão 2",bbox_to_anchor=(0.5, 1.2))
     fig.autofmt_xdate()
     fig.savefig('train_dir/' + caminho + '/graficos/acuracyQuestoes2PorEpso.png')
     plt.close(fig)   
-    fig, ax = plt.subplots()  
+    fig, ax = plt.subplots(figsize = (15, 9)) 
     for i in teste:
         ax.plot(passo_list[i], my_list_quest3[i],label="EP" + str(i))
     fig.autofmt_xdate()
+    ax.legend(loc='upper center',ncol=8,title="Epsodio x Questão 3",bbox_to_anchor=(0.5, 1.2))
+    fig.autofmt_xdate()
     fig.savefig('train_dir/' + caminho + '/graficos/acuracyQuestoes3PorEpso.png')
     plt.close(fig)   
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize = (15, 9)) 
     for i in teste:
         ax.plot(passo_list[i], my_list_quest4[i],label="EP" + str(i))
+    ax.legend(loc='upper center',ncol=8,title="Epsodio x Questao 4",bbox_to_anchor=(0.5, 1.2))
     fig.autofmt_xdate()
     fig.savefig('train_dir/' + caminho + '/graficos/acuracyQuestoes4PorEpso.png')
     plt.close(fig)   
@@ -152,14 +161,14 @@ def curriculos_total(caminho,curriculo):
     os.makedirs('train_dir/' + caminho + '/graficos/', exist_ok=True)
 
      
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize = (15, 9)) 
     ax.legend(loc='upper right',ncol=2,title="curriculos")
     plt.style.use('fivethirtyeight')
     teste.plot(kind="bar",ax=ax ,width = 1,figsize=(9,7),rot=1)
     fig.tight_layout()
     handles, labels = ax.get_legend_handles_labels()
     # reverse to keep order consistent
-    ax.legend(loc='upper right',ncol=2,title="curriculos")
+    ax.legend(loc='upper right',ncol=8,title="Total de curriculos X Ep")
     fig.savefig('train_dir/' + caminho + '/graficos/totalclporepisodio.png')
     plt.close(fig)
  
@@ -195,18 +204,18 @@ def curriculos_total(caminho,curriculo):
     teste = data1['ep'].unique()
     for i in teste: 
         dataEp0 = data1.loc[data1['ep'] ==i ]
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize = (15, 9)) 
+        ax.legend(loc='upper right',ncol=8,title="Utilização dos currículos por ep"+ str(i))
         ax.plot( dataEp0['porcentagem'],dataEp0['passo'])
         fig.autofmt_xdate() 
+        
         fig.savefig('train_dir/' + caminho + '/graficos/gaficoalteracao_ep'+ str(i) +  '.png')
         plt.close(fig)
     connection.close()
 
 
 
-    for acao in data:
-     
-        print(f"{data.passo}")
+    
 
 #@click.command()
 #@click.option("--curriculo",prompt=True)
@@ -228,7 +237,9 @@ def view_investmentpand(curriculo):
 
 if __name__ == "__main__":
     #cli()
-    curriculos_geral("teste","testedqn5cenarios_04112023_0755_epsod_")
+    curriculos_total("testeNovoSetup3cenarisdqn3cenarios01_23112023_0153_epsod","testeNovoSetup3cenarisdqn3cenarios01_23112023_0153_epsod")
+    curriculos_geral("testeNovoSetup3cenarisdqn3cenarios01_23112023_0153_epsod","testeNovoSetup3cenarisdqn3cenarios01_23112023_0153_epsod")
+    
 
 
 

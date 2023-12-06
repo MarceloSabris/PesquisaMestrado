@@ -18,6 +18,8 @@ from os.path import isfile, join
 from sqlalchemy import create_engine
 
 from sqlalchemy import create_engine
+import re
+
 
 db_name = 'postgres'
 db_user = 'postgres'
@@ -30,15 +32,26 @@ db = create_engine(db_string)
 query =""
 
  
-def add_new_row(passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem):
+def add_new_row(passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem,tipoescolha ,acao,rewardExecution=0,rewardTotal=0):
     try:
-       import re
-       query = "INSERT INTO \"Curriculos\" (passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1,acuracy_questao_2,acuracy_questao_3,acuracy_questao_4,porcentagem) VALUES(%s,\'%s\',%s,%s,%s,%s,%s,%s,%s,\'%s\')" %( passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem)
-       my_new_string = re.sub('\n\.]', '', query)
-       str_en = str.encode(my_new_string)
-       my_new_string = str_en.decode()
       
-       db.execute(my_new_string) 
+       
+         query = "INSERT INTO \"Curriculos\" (passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1,acuracy_questao_2,acuracy_questao_3,acuracy_questao_4,porcentagem,tipoescolha,acao,rewardExecution,rewardTotal) VALUES(%s,\'%s\',%s,%s,%s,%s,%s,%s,%s,\'%s\',\'%s\',%s,%s)" %( passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem,tipoescolha,acao,rewardExecution,rewardTotal)
+         my_new_string = re.sub('\n\.]', '', query)
+         str_en = str.encode(my_new_string)
+         my_new_string = str_en.decode()
+         db.execute(my_new_string)
+        
+    except Exception as error:
+        print('****************** erro -- ao executar ***********')
+        print(error)
+
+def add_train(config ): 
+    try:
+      
+         import re
+         db.execute(config.sql)
+         return ''
     except Exception as error:
         print('****************** erro -- ao executar ***********')
         print(error)

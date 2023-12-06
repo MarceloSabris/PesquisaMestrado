@@ -746,100 +746,75 @@ def main():
 
 def runGenerateDQN(config):     
  
- input_shape = 5
- num_actions = 3
- num_episodes = 15
- epsilon = 1
- gamma = 0.9
- batch = 5
+    input_shape = 5
+   
+    num_episodes = 15
+    GroupSlip =3000    
+    num_executionactions = 17 
+    epsilon = 1
+    gamma = 0.9
+    batch = 5
 
- epoch = 0
- alpha = 0.1
+    epoch = 0
+    alpha = 0.1
+    num_actions = 3   
+    groupdataSet = ['1,1,1,0.1,0.1','1,1,1,1,1','0.1,0.1,0.1,1,1']
+    # Set up the optimizer and loss function
+    #value_network = tf.keras.models.load_model('keras')
+    epsod = 0
+    nomepasta = "testeNovoDqn3cenarios-0,1"
+    config.GroupQuestion = "a"
+    trainer = None
+    data = time.strftime(r"%d%m%Y_%H%M", time.localtime())
+    #data = "06112023_1710"
  
-
+    config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
  
- # Set up the optimizer and loss function
- 
- #value_network = tf.keras.models.load_model('keras')
- epsod = 0
- nomepasta = "testeNovoAcerto2xSetupPercentual93cenarisdqn3cenarios01"
- config.GroupQuestion = "a"
- trainer = None
- data = time.strftime(r"%d%m%Y_%H%M", time.localtime())
- #data = "06112023_1710"
- 
- config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
- 
- trainer = Trainer(config,config.DataSetClevr,
+    trainer = Trainer(config,config.DataSetClevr,
                       config.dataset_test, config.dataset_test) 
-
- value_network = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(32, activation='relu', input_shape=(input_shape,)),
-    tf.keras.layers.Dense(32, activation='relu'),
-    tf.keras.layers.Dense(num_actions)
-     ])
- optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
- loss_fn = tf.keras.losses.MeanSquaredError(reduction="auto", name="mean_squared_error")  
-  
- #config.train_dir = "testedqn_"+ data+ "_epsod_6" 
- 
- #value_network = tf.keras.models.load_model('train_dir/' +nomepasta +"_"+ data+ "_epsod_2" + '/keras/')
- replay = deque(maxlen=500)
- while epsod <num_episodes :
+    value_network = create_model(input_shape,num_actions,0.001,3)
+    model = tf.keras.models.clone_model(value_network)
+    replay = deque(maxlen=50)
+    while epsod <num_episodes :
  
   
   
-  config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
-  config.StepChangeGroupRun=0
-  config.trainGlobal = 0
-  config.trainPosition = 0
-  #08/11
-  GroupSlip =3000          
-  #GroupSlip =4500 
-  state =[0,0,0,0,0]
-  random.seed(time.perf_counter())
-            
+        config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
+        config.StepChangeGroupRun=0
+        config.trainGlobal = 0
+        config.trainPosition = 0
+        
+        state =[0,0,0,0,0]
+        set_seed(time.perf_counter())
+           
 
 
             
-  for acao in range(17):
+        for acao in num_executionactions:
             print("**********************acao *********************")
             print(acao)
-            #StepChangeGroup = self.split_with_sum( self.config.TotalStepChangeGroup,self.config.QtdStepChangeGroup)
-            #orderDataset = [item for item in range(0,self.config.QtdStepChangeGroup )]   
-            #groupdataSet = ['1,1,1,0.1,0.1','1,1,1,0.5,0.5', '1,1,1,1,1','0.1,0.1,0.1,1,1','0.5,0.5,0.5,1,1'] 
-            # testedqn0-01cenarios_09112023_1320_epsod_10 groupdataSet = ['1,1,1,0.1,0.1','1,1,1,1,1','0.1,0.1,0.1,1,1'] 
-            # testeNovoSetupdqn3cenarios0_17112023_2129_epsod_15 groupdataSet = ['1,1,1,0.1,0.1','1,1,1,1,1','0.1,0.1,0.1,1,1'] 
-            #groupdataSet = ['1,1,1,0,0','1,1,1,1,1','0,0,0,1,1'] 
-            # testedqn0-0cenarios_08112023_1346_epsod_8 groupdataSet = ['1,1,1,0.1,0','1,1,1,1,1','0,0,0,1,1'] 
-            #,'0.5,0.5,0.5,1,1','0.8,0.8,0.8,1,1']
+           
             
-            groupdataSet = ['1,1,1,0.1,0.1','1,1,1,1,1','0.1,0.1,0.1,1,1']
-            value_function = value_network.predict(np.array([state]),verbose=0)[0]
                 
             # quando for ultimo  epsodio não usar aleatoriedade 
                 
-            if random.random()<epsilon :
+            if random.random()>epsilon or num_episodes== epsod:
+               config.tipoescolha = 'dqn'
+               print('DQN')
+               value_function = value_network.predict(np.array([state]),verbose=0)[0]
+               action = np.argmax(value_function)
+               config.acao = action
                print('rand')
-               
+            else:
                config.tipoescolha = 'rand'
                action = random.randint(0,num_actions-1) 
                config.acao = action
-            else:
-               config.tipoescolha = 'dqn'
-               print('DQN')
-               action = np.argmax(value_function)
-               config.acao = action
+               
             print ('*************** action ')
             print (action)    
             print ('*************** epsilon ')
             print(epsilon)  
             config.GrupDataset =  groupdataSet[action] 
-            
-            
-            
-            #self.config.StepChangeGroup = ','.j=oin(map(str, StepChangeGroup.astype(int))) 
-            
             config.StepChangeGroup = GroupSlip 
             
                              
@@ -853,7 +828,7 @@ def runGenerateDQN(config):
             config.runWhenlearned = False 
             questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4 = trainer.train(config)
             
-            rewards = 0.17*questaotipo0+0.17*questaotipo1+0.17*questaotipo2+ 0.25*questaotipo3+0.25*questaotipo4
+            rewards = min(questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4, )
             
             # 10 epsodios  
             # sumarização das questões 
@@ -871,14 +846,8 @@ def runGenerateDQN(config):
             
             done = 0 
             next_state = [questaotipo0,questaotipo1,questaotipo2,questaotipo3,questaotipo4]
-            #if action == 0 : 
-            #  next_state[5] = 1
-            #elif action == 1 :  
-            #   next_state[6] = 1
-            #else:
-            #  next_state[7] = 1
-            
-            if rewards >= 0.78 :
+      
+            if rewards >= 0.85 :
                done = 1
             replay.append((state,action,rewards,next_state,done))
             state = next_state
@@ -891,30 +860,25 @@ def runGenerateDQN(config):
                #colar 35 - açoes  
                             
              with tf.GradientTape()    as tape:
-                 
                 batch_ = random.sample(replay,batch)
-                q_value1 = value_network(tf.convert_to_tensor([x[0] for x in batch_]))
-                q_value2 = value_network(tf.convert_to_tensor([x[3] for x in batch_]))
-                
-                reward = tf.convert_to_tensor([x[2] for x in batch_])
-                action = tf.convert_to_tensor([x[1] for x in batch_])
-                done =   tf.convert_to_tensor([x[4] for x in batch_])
-      
-                
-                #actual_q_value1 = tf.cast(reward,tf.float64) + tf.cast(tf.constant(alpha),tf.float64)*(tf.cast(tf.constant(gamma),tf.float64)*tf.cast((tf.constant(1)-done),tf.float64)*tf.cast(tf.reduce_min(q_value2),tf.float64))           
-                #loss = tf.cast(tf.gather(q_value1,action,axis=1,batch_dims=1),tf.float64)
-                #loss = tf.cast(tf.reduce_mean(q_value1,axis=1),tf.float64)
-                #loss = loss - actual_q_value1
-                #loss = tf.reduce_mean(tf.math.pow(loss,2))
-                actual_q_value1 = tf.cast(reward,tf.float64) + tf.cast(tf.constant(alpha),tf.float64)*(tf.cast(tf.constant(gamma),tf.float64)*tf.cast((tf.constant(1)-done),tf.float64)*tf.cast(tf.reduce_max(q_value2),tf.float64))           
-                loss = tf.cast(tf.gather(q_value1,action,axis=1,batch_dims=1),tf.float64)
-                loss = loss - actual_q_value1
-                loss = tf.reduce_mean(tf.math.pow(loss,2))
-        
-                grads = tape.gradient(loss, value_network.trainable_variables)
-                optimizer.apply_gradients(zip(grads, value_network.trainable_variables))
+                x = np.array([e[0] for e in batch])
+                y = model.predict(x)
+                  # Construct target
+               
+                x2 = np.array([e[3] for e in batch_])
+                Q2 = gamma*np.max(model.predict(x2), axis=1)
+                for i,(s,a,r,s2,d) in enumerate(batch_):
+                    y[i][a] = r
+                    if not d:
+                        y[i][a] += Q2[i]
 
-                print('Epoch {} done with loss {} !!!!!!'.format(epoch,loss))
+                # Update
+                model.fit(x, y, batch_size=batch, epochs=1, verbose=0)
+
+                value_network.set_weights(model.get_weights())
+                
+                
+                
                 epoch+=1 
                 #epoch%8==0 and 
              
@@ -922,30 +886,52 @@ def runGenerateDQN(config):
             
             if acao%3==0 and epsilon>0.1:
                 epsilon*=0.95
-                           
-                
+            
+        value_network.save('train_dir/' +config.train_dir + '/keras/')
   
-  value_network.save('train_dir/' +config.train_dir + '/keras/')
-  
-  trainer.Clear()  
-  del trainer 
-  del value_network
-  tf.keras.backend.clear_session()
-  tf.compat.v1.reset_default_graph()
-  import gc
-  trainer = None 
-  gc.collect()
-  value_network = tf.keras.models.load_model('train_dir/' +config.train_dir + '/keras/')
-  optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
-  loss_fn = tf.keras.losses.MeanSquaredError(reduction="auto", name="mean_squared_error") 
-  epsod = epsod +1  
-  config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
-  trainer = Trainer(config,config.DataSetClevr,
+        trainer.Clear()  
+        del trainer 
+        del value_network
+        del model
+        tf.keras.backend.clear_session()
+        tf.compat.v1.reset_default_graph()
+        import gc
+        trainer = None 
+        gc.collect()
+        value_network = tf.keras.models.load_model('train_dir/' +config.train_dir + '/keras/')
+        model = tf.keras.models.clone_model(value_network)
+        optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        epsod = epsod +1  
+        config.train_dir = nomepasta +"_"+ data+ "_epsod_" + str(epsod)
+        trainer = Trainer(config,config.DataSetClevr,
                       config.dataset_test, config.dataset_test) 
- PlotGrafico.curriculos_total(config.train_dir[:-3],config.train_dir[:-2])
- PlotGrafico.curriculos_geral(config.train_dir[:-3],config.train_dir[:-2])
+    PlotGrafico.curriculos_total(config.train_dir[:-3],config.train_dir[:-2])
+    PlotGrafico.curriculos_geral(config.train_dir[:-3],config.train_dir[:-2])
   
 
+
+def set_seed(seed=1):
+    np.random.seed(seed)
+    random.seed(seed)
+    tf.random.set_seed(seed)
+    random.seed(seed)
+        
+def create_model ( input_shape_cen,num_actions,lr,layers): 
+     
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Dense(
+        32, input_shape=(input_shape_cen), activation="relu"))
+    for i in range(1,len(layers)):
+        model.add(tf.keras.layers.Dense(layers[i], activation="relu"))
+    model.add(tf.keras.layers.Dense(num_actions ))
+    model.compile(loss="mse", optimizer=tf.keras.optimizers.Adam(lr=lr))
+    model.summary()
+    return model    
+
+def loadModel ( train_dir):
+    return tf.keras.models.load_model(train_dir)
+
+ 
 
 if __name__ == '__main__':
     config = main()
