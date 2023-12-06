@@ -36,7 +36,7 @@ def add_new_row(passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_ques
     try:
       
        
-         query = "INSERT INTO \"Curriculos\" (passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1,acuracy_questao_2,acuracy_questao_3,acuracy_questao_4,porcentagem,tipoescolha,acao,rewardExecution,rewardTotal) VALUES(%s,\'%s\',%s,%s,%s,%s,%s,%s,%s,\'%s\',\'%s\',%s,%s)" %( passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem,tipoescolha,acao,rewardExecution,rewardTotal)
+         query = "INSERT INTO \"Curriculos\" (passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1,acuracy_questao_2,acuracy_questao_3,acuracy_questao_4,porcentagem,tipoescolha,acao,rewardExecution,rewardTotal) VALUES(%s,\'%s\',%s,%s,%s,%s,%s,%s,%s,\'%s\',\'%s\',%s,%s,%s)" %( passo,curriculo,accuracy_treinamento,accuracy_teste,acuracy_questao_0,acuracy_questao_1, acuracy_questao_2, acuracy_questao_3, acuracy_questao_4, porcentagem,tipoescolha,acao,rewardExecution,rewardTotal)
          my_new_string = re.sub('\n\.]', '', query)
          str_en = str.encode(my_new_string)
          my_new_string = str_en.decode()
